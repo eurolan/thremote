@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:remote/stb_service.dart';
+import 'package:remote/models/device_model.dart';
+import 'package:remote/utils/stb_service.dart';
 
 class RemoteControlScreen extends StatelessWidget {
-  final String ip;
-  final String pairingCode;
+  final DeviceModel deviceModel;
 
-  RemoteControlScreen({super.key, required this.ip, required this.pairingCode});
+  RemoteControlScreen({super.key, required this.deviceModel});
 
   final remote = STBRemoteService();
 
   void send(int code) {
-    remote.sendRcCode(ip: ip, code: pairingCode, rcCode: code);
+    remote.sendRcCode(
+      ip: deviceModel.ipAddress,
+      code: deviceModel.pairingCode!,
+      rcCode: code,
+    );
   }
 
   Widget remoteButton(String label, int code) {
@@ -20,7 +24,7 @@ class RemoteControlScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('STB Remote')),
+      appBar: AppBar(title: Text(deviceModel.deviceName)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

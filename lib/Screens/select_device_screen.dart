@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:remote/Screens/remote_controller_screen.dart';
-import 'package:remote/Screens/search_devices_screen.dart';
+import 'package:remote/screens/remote_controller_screen.dart';
+import 'package:remote/screens/search_devices_screen.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/pref/shared_pref.dart';
 
@@ -52,10 +52,7 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                                   MaterialPageRoute(
                                     builder:
                                         (_) => RemoteControlScreen(
-                                          ip: connectedDevices[index].ipAddress,
-                                          pairingCode:
-                                              connectedDevices[index]
-                                                  .pairingCode!,
+                                          deviceModel: connectedDevices[index],
                                         ),
                                   ),
                                 );
@@ -283,9 +280,6 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                 child: Text('Cancel'),
               ),
               ElevatedButton(
-                // style: ElevatedButton.styleFrom(
-                //   // backgroundColor: Colors.redAccent,
-                // ),
                 onPressed: () async {
                   await SharedPrefrencesHelper().deleteConnectedDevice(
                     device.ipAddress,

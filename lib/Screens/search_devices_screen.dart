@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:remote/Screens/pairing_dialog.dart';
+import 'package:remote/utils/pairing_dialog.dart';
 import 'package:remote/models/device_model.dart';
-import 'package:remote/stb_service.dart';
+import 'package:remote/utils/stb_service.dart';
 
 class SearchDevicesScreen extends StatefulWidget {
   const SearchDevicesScreen({super.key});
@@ -119,9 +119,7 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Center(child: CircularProgressIndicator()),
-                          ],
+                          children: [Center(child: Text("No devices found"))],
                         ),
                       );
                     }
@@ -129,26 +127,16 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                   if (snapshot.hasError) {
                     return const Center(child: Text("An error occured!"));
                   }
-                  return const Center(child: CircularProgressIndicator());
+                  return Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [Center(child: CircularProgressIndicator())],
+                    ),
+                  );
                 },
               ),
-              // Column(children: []),
-              // isLoading
-              //     ? Center(child: CircularProgressIndicator())
-              //     : ListView.builder(
-              //       itemCount: devices.length,
-              //       itemBuilder:
-              //           (_, i) => ListTile(
-              //             title: Text(devices[i]),
-              //             onTap:
-              //                 () => Navigator.push(
-              //                   context,
-              //                   MaterialPageRoute(
-              //                     builder: (_) => PairingScreen(ip: devices[i]),
-              //                   ),
-              //                 ),
-              //           ),
-              //     ),
+      
             ],
           ),
         ),

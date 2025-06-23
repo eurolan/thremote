@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:remote/Screens/remote_controller_screen.dart';
+import 'package:remote/screens/remote_controller_screen.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/pref/shared_pref.dart';
-import 'package:remote/stb_service.dart';
+import 'package:remote/utils/stb_service.dart';
 
 class PairingDialog extends StatefulWidget {
   final DeviceModel deviceModel;
@@ -22,10 +22,10 @@ class _PairingDialogState extends State<PairingDialog> {
   void _pairAndNavigate() async {
     setState(() => _isLoading = true);
     try {
-      // await _service.pairDevice(
-      //   widget.deviceModel.ipAddress,
-      //   _codeController.text,
-      // );
+      await _service.pairDevice(
+        widget.deviceModel.ipAddress,
+        _codeController.text,
+      );
 
       // Add device to connected devices
       await SharedPrefrencesHelper().addConnectedDevice(
@@ -44,11 +44,7 @@ class _PairingDialogState extends State<PairingDialog> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => RemoteControlScreen(
-                ip: widget.deviceModel.ipAddress,
-                pairingCode: _codeController.text,
-              ),
+          builder: (_) => RemoteControlScreen(deviceModel: widget.deviceModel),
         ),
       );
     } catch (e) {

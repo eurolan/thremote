@@ -1,11 +1,11 @@
-// Flutter STB Remote Core Implementation with UI and Pairing Screen
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:flutter/material.dart';
 import 'package:multicast_dns/multicast_dns.dart';
+import 'package:remote/models/device_model.dart';
 
 class STBRemoteService {
   static const String devId = "faeac9ec41c2f652";
@@ -163,9 +163,8 @@ class STBRemoteService {
     await socket.close();
   }
 
-
-  Future<List<String>> discoverStbsByMdns() async {
-    final List<String> found = [];
+  Future<List<DeviceModel>> discoverStbsByMdns() async {
+    final List<DeviceModel> foundDevices = [];
     final MDnsClient client = MDnsClient();
 
     await client.start();
@@ -178,17 +177,26 @@ class STBRemoteService {
       await for (final srv in client.lookup<SrvResourceRecord>(
         ResourceRecordQuery.service(ptr.domainName),
       )) {
+        final deviceName = srv.name;
+
         await for (final ip in client.lookup<IPAddressResourceRecord>(
           ResourceRecordQuery.addressIPv4(srv.target),
         )) {
           final ipAddress = ip.address.address;
-          print('✅ Found STB via mDNS: $ipAddress');
-          found.add(ipAddress);
+          debugPrint('✅ Found STB: $deviceName at $ipAddress');
+
+          foundDevices.add(
+            DeviceModel(
+              deviceName: deviceName,
+              ipAddress: ipAddress,
+              pairingCode: null,
+            ),
+          );
         }
       }
     }
 
     client.stop();
-    return found;
+    return foundDevices;
   }
 }
