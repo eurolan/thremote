@@ -125,7 +125,9 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                     }
                   }
                   if (snapshot.hasError) {
-                    return const Center(child: Text("An error occured!"));
+                    return Center(
+                      child: Text("An error occured! ${snapshot.error}"),
+                    );
                   }
                   return Expanded(
                     child: Column(
@@ -136,7 +138,6 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                   );
                 },
               ),
-      
             ],
           ),
         ),
