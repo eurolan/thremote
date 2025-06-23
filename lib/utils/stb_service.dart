@@ -1,10 +1,11 @@
-// Flutter STB Remote Core Implementation with UI and Pairing Screen
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:flutter/material.dart';
+import 'package:multicast_dns/multicast_dns.dart';
+import 'package:remote/models/device_model.dart';
 
 class STBRemoteService {
   static const String devId = "faeac9ec41c2f652";
@@ -140,12 +141,8 @@ class STBRemoteService {
   }) async {
     final socket = await Socket.connect(ip, port);
 
-    // Buffer to collect response
-    final responses = <List<int>>[];
-
     socket.listen(
       (data) {
-        responses.add(data);
         print("[RESPONSE] ${utf8.decode(data, allowMalformed: true)}");
       },
       onDone: () => socket.destroy(),
@@ -154,9 +151,7 @@ class STBRemoteService {
     );
 
     socket.add(buildConnectMessage());
-    await Future.delayed(
-      Duration(milliseconds: 200),
-    ); // Give it time to respond
+    await Future.delayed(Duration(milliseconds: 200));
 
     socket.add(buildPingMessage(code));
     await Future.delayed(Duration(milliseconds: 200));
@@ -168,29 +163,40 @@ class STBRemoteService {
     await socket.close();
   }
 
-  Future<List<String>> scanForSTBs(String subnet) async {
-    final List<Future<String?>> futures = [];
+  Future<List<DeviceModel>> discoverStbsByMdns() async {
+    final List<DeviceModel> foundDevices = [];
+    final MDnsClient client = MDnsClient();
 
-    for (int i = 1; i < 255; i++) {
-      final ip = '$subnet.$i';
-      futures.add(_tryConnect(ip));
+    await client.start();
+
+    await for (final ptr in client.lookup<PtrResourceRecord>(
+      ResourceRecordQuery.serverPointer(
+        '_infomir_mobile_rc_service._tcp.local',
+      ),
+    )) {
+      await for (final srv in client.lookup<SrvResourceRecord>(
+        ResourceRecordQuery.service(ptr.domainName),
+      )) {
+        final deviceName = srv.name;
+
+        await for (final ip in client.lookup<IPAddressResourceRecord>(
+          ResourceRecordQuery.addressIPv4(srv.target),
+        )) {
+          final ipAddress = ip.address.address;
+          debugPrint('✅ Found STB: $deviceName at $ipAddress');
+
+          foundDevices.add(
+            DeviceModel(
+              deviceName: deviceName,
+              ipAddress: ipAddress,
+              pairingCode: null,
+            ),
+          );
+        }
+      }
     }
 
-    final results = await Future.wait(futures);
-    return results.whereType<String>().toList();
-  }
-
-  Future<String?> _tryConnect(String ip) async {
-    try {
-      final socket = await Socket.connect(
-        ip,
-        40611,
-        timeout: Duration(milliseconds: 300),
-      );
-      await socket.close();
-      return ip;
-    } catch (_) {
-      return null;
-    }
+    client.stop();
+    return foundDevices;
   }
 }

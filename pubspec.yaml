@@ -37,6 +37,8 @@ dependencies:
   crypto: ^3.0.6
   encrypt: ^5.0.3
   network_info_plus: ^6.1.4
+  multicast_dns: ^0.3.3
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
