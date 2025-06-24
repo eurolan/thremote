@@ -65,11 +65,15 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                         itemBuilder: (context, index) {
                           final device = devices[index];
                           return GestureDetector(
-                            onTap: () {
+                            onTap: () async {
+                              await service.sendPairingRequest(
+                                devices[index].ipAddress,
+                              );
                               showDialog(
                                 context: context,
                                 builder:
                                     (_) => PairingDialog(
+                                      service: service,
                                       deviceModel: devices[index],
                                     ),
                               );
