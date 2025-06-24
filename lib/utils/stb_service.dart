@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/material.dart';
 import 'package:multicast_dns/multicast_dns.dart';
@@ -138,33 +137,6 @@ class STBRemoteService {
     }
   }
 
-  // Future<void> pairWithDevice(String ipAddress) async {
-  //   try {
-  //     final socket = await Socket.connect(ipAddress, port);
-  //     socket.add(getReqPairMsg());
-  //     await socket.flush();
-
-  //     stdout.write("Enter pairing code displayed on TV: ");
-  //     final code = stdin.readLineSync();
-
-  //     if (code == null || code.length != 6) {
-  //       print("Pairing code must be 6 digits");
-  //       socket.destroy();
-  //       return;
-  //     }
-
-  //     socket.add(getPairCompleteMsg(code));
-  //     await socket.flush();
-
-  //     final response = await socket.first;
-  //     printReply(code, Uint8List.fromList(response));
-
-  //     socket.destroy();
-  //   } catch (e) {
-  //     print("Connection error: $e");
-  //   }
-  // }
-
   Future<void> sendPairingRequest(String ipAddress) async {
     try {
       _socket = await Socket.connect(ipAddress, port);
@@ -194,33 +166,59 @@ class STBRemoteService {
     }
   }
 
-  Future<void> sendRcCode({
-    required String ip,
-    required String code,
-    required int rcCode,
-  }) async {
-    final socket = await Socket.connect(ip, port);
+  Uint8List getRcCodeMsg(String code, int rcCode) {
+    const cmd = "rc-code-reqrc-code-reqrc-code-re";
+    final body =
+        '{"dev_id":"$devId","dev_descr":"$devDescr","rc_code":$rcCode}';
+    return getMessage(cmd, body, code);
+  }
 
-    socket.listen(
-      (data) {
-        print("[RESPONSE] ${utf8.decode(data, allowMalformed: true)}");
-      },
-      onDone: () => socket.destroy(),
-      onError: (e) => print("Socket error: $e"),
-      cancelOnError: true,
-    );
+  Uint8List getPingMsg(String code) {
+    const cmd = "ping-reqping-reqping-reqping-req";
+    final body = '{"dev_id":"$devId"}';
+    return getMessage(cmd, body, code);
+  }
 
-    socket.add(buildConnectMessage());
-    await Future.delayed(Duration(milliseconds: 200));
+  Uint8List getReqConnectMsg() {
+    final body = '{"dev_id":"$devId","dev_descr":"$devDescr"}';
+    return getMessage("connect-reqconnect-reqconnect-re", body);
+  }
 
-    socket.add(buildPingMessage(code));
-    await Future.delayed(Duration(milliseconds: 200));
+  Future<void> sendRcCode(Socket socket, String code, int rcCode) async {
+    socket.add(getRcCodeMsg(code, rcCode));
+    socket.add(getPingMsg(code));
+    await socket.flush();
 
-    socket.add(buildRcCodeMessage(code, rcCode));
-    socket.add(buildPingMessage(code));
-    await Future.delayed(Duration(milliseconds: 300));
+    final response = await socket.first;
+    printReply(code, Uint8List.fromList(response));
+  }
 
-    await socket.close();
+  Future<void> sendKey(String ipAddress, String code, int rcCode) async {
+    try {
+      final socket = await Socket.connect(ipAddress, port);
+
+      // Step 1: Send connect request
+      socket.add(getReqConnectMsg());
+      await socket.flush();
+
+      // Step 2: Read and print reply
+      final response1 = await socket.first;
+      printReply(code, Uint8List.fromList(response1));
+
+      // Step 3: Send ping
+      socket.add(getPingMsg(code));
+      await socket.flush();
+
+      final response2 = await socket.first;
+      printReply(code, Uint8List.fromList(response2));
+
+      // Step 4: Send RC code and ping
+      await sendRcCode(socket, code, rcCode);
+
+      socket.destroy();
+    } catch (e) {
+      print("sendKey error: $e");
+    }
   }
 
   Future<List<DeviceModel>> discoverStbsByMdns() async {

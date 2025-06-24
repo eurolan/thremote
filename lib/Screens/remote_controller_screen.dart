@@ -9,12 +9,8 @@ class RemoteControlScreen extends StatelessWidget {
 
   final remote = STBRemoteService();
 
-  void send(int code) {
-    remote.sendRcCode(
-      ip: deviceModel.ipAddress,
-      code: deviceModel.pairingCode!,
-      rcCode: code,
-    );
+  void send(int code) async {
+    await remote.sendKey(deviceModel.ipAddress, deviceModel.pairingCode!, code);
   }
 
   Widget remoteButton(String label, int code) {
