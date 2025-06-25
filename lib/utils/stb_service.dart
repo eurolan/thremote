@@ -1,16 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
-import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/material.dart';
 import 'package:multicast_dns/multicast_dns.dart';
-import 'package:pointycastle/api.dart';
-import 'package:remote/models/device_model.dart';
-import 'dart:typed_data';
-import 'dart:convert';
+
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:pointycastle/export.dart';
-import 'package:crypto/crypto.dart';
+
+// import 'package:crypto/crypto.dart';
+import 'package:remote/models/device_model.dart';
+// import 'package:encrypt/encrypt.dart' as encrypt;
 
 // import 'package:pointycastle/digests/sha1.dart';
 
@@ -18,12 +17,41 @@ class STBRemoteService {
   int port = 40611;
   String devId = "faeac9ec41c2f652";
   String devDescr = "Magic Remote";
-  Uint8List toUint8(List<int> list) {
-    return Uint8List.fromList(list.map((e) => e < 0 ? 256 + e : e).toList());
+
+  /// Convert array of integers to Uint8List, handling negative values
+  static Uint8List toUint8(List<int> arr) {
+    List<int> tmp = arr.map((x) => x >= 0 ? x : x + 256).toList();
+    return Uint8List.fromList(tmp);
   }
 
-  Uint8List getIV() {
-    return toUint8([
+  /// Encrypt data using password (using manual CFB-8 implementation)
+  static Uint8List encryptData(String pwd, Uint8List data) {
+    return encryptDataManual(pwd, data);
+  }
+
+  /// Decrypt data using password (using manual CFB-8 implementation)
+  static Uint8List decryptData(String pwd, Uint8List data) {
+    return decryptDataManual(pwd, data);
+  }
+
+  /// Alternative implementation using manual CFB processing if the above doesn't work
+  static Uint8List encryptDataManual(String pwd, Uint8List data) {
+    // Convert password to bytes
+    Uint8List pwdBytes = utf8.encode(pwd);
+
+    // Suffix array with negative values converted
+    List<int> suffix = [8, 56, -102, -124, 29, -75, -45, 74];
+    Uint8List suffixBytes = toUint8(suffix);
+
+    // Concatenate password and suffix
+    Uint8List toHash = Uint8List.fromList([...pwdBytes, ...suffixBytes]);
+
+    // Calculate SHA1 hash and take first 16 bytes as key
+    crypto.Digest sha1Hash = crypto.sha1.convert(toHash);
+    Uint8List key = Uint8List.fromList(sha1Hash.bytes.take(16).toList());
+
+    // IV array with negative values converted
+    List<int> ivArray = [
       18,
       111,
       -15,
@@ -40,94 +68,153 @@ class STBRemoteService {
       99,
       -34,
       101,
-    ]);
-  }
+    ];
+    Uint8List iv = toUint8(ivArray);
 
-  Uint8List sha1Digest(Uint8List data) {
-    final d = sha1.convert(data);
-    return Uint8List.fromList(d.bytes);
-  }
+    // Create AES block cipher
+    final blockCipher = AESEngine();
+    final keyParam = KeyParameter(key);
+    blockCipher.init(true, keyParam); // Always true for CFB encryption
 
-  Uint8List getKeyFromPassword(String password) {
-    final pwdBytes = utf8.encode(password);
-    final suffix = toUint8([8, 56, -102, -124, 29, -75, -45, 74]);
-    final combined = Uint8List.fromList([...pwdBytes, ...suffix]);
-    final digest = sha1Digest(combined);
-    return digest.sublist(0, 16); // AES-128
-  }
+    final output = Uint8List(data.length);
+    final feedbackRegister = Uint8List.fromList(
+      iv,
+    ); // Copy IV to feedback register
+    final cipherInput = Uint8List(16); // AES block size
+    final cipherOutput = Uint8List(16);
 
+    for (int i = 0; i < data.length; i++) {
+      // Copy feedback register to cipher input
+      cipherInput.setAll(0, feedbackRegister);
 
-  Uint8List encryptData(String password, Uint8List plainText) {
-    final key = getKeyFromPassword(password);
-    final iv = getIV();
-    final blockCipher = AESFastEngine();
-    final blockSize = blockCipher.blockSize;
+      // Encrypt the feedback register
+      blockCipher.processBlock(cipherInput, 0, cipherOutput, 0);
 
-    final output = Uint8List(plainText.length);
-    final feedback = Uint8List.fromList(iv);
+      // XOR the first byte of cipher output with plaintext
+      output[i] = cipherOutput[0] ^ data[i];
 
-    blockCipher.init(true, KeyParameter(key));
-
-    for (int i = 0; i < plainText.length; i++) {
-      final encryptedBlock = Uint8List(blockSize);
-      blockCipher.processBlock(feedback, 0, encryptedBlock, 0);
-
-      final cipherByte = plainText[i] ^ encryptedBlock[0];
-      output[i] = cipherByte;
-
-      // Shift feedback by 1 and append the ciphertext byte
-      for (int j = 0; j < blockSize - 1; j++) {
-        feedback[j] = feedback[j + 1];
+      // Shift feedback register left by 1 byte and add the ciphertext
+      for (int j = 0; j < 15; j++) {
+        feedbackRegister[j] = feedbackRegister[j + 1];
       }
-      feedback[blockSize - 1] = cipherByte;
+      feedbackRegister[15] = output[i]; // Add ciphertext to feedback register
     }
 
     return output;
   }
 
-  Uint8List decryptData(String password, Uint8List cipherText) {
-    final key = getKeyFromPassword(password);
-    final iv = getIV();
-    final blockCipher = AESFastEngine();
-    final blockSize = blockCipher.blockSize;
+  /// Alternative manual decryption
+  static Uint8List decryptDataManual(String pwd, Uint8List data) {
+    // Convert password to bytes
+    Uint8List pwdBytes = utf8.encode(pwd);
 
-    final output = Uint8List(cipherText.length);
-    final feedback = Uint8List.fromList(iv);
+    // Suffix array with negative values converted
+    List<int> suffix = [8, 56, -102, -124, 29, -75, -45, 74];
+    Uint8List suffixBytes = toUint8(suffix);
 
-    blockCipher.init(true, KeyParameter(key));
+    // Concatenate password and suffix
+    Uint8List toHash = Uint8List.fromList([...pwdBytes, ...suffixBytes]);
 
-    for (int i = 0; i < cipherText.length; i++) {
-      final encryptedBlock = Uint8List(blockSize);
-      blockCipher.processBlock(feedback, 0, encryptedBlock, 0);
+    // Calculate SHA1 hash and take first 16 bytes as key
+    crypto.Digest sha1Hash = crypto.sha1.convert(toHash);
+    Uint8List key = Uint8List.fromList(sha1Hash.bytes.take(16).toList());
 
-      final plainByte = cipherText[i] ^ encryptedBlock[0];
-      output[i] = plainByte;
+    // IV array with negative values converted
+    List<int> ivArray = [
+      18,
+      111,
+      -15,
+      33,
+      102,
+      71,
+      -112,
+      109,
+      -64,
+      -23,
+      6,
+      -103,
+      -76,
+      99,
+      -34,
+      101,
+    ];
+    Uint8List iv = toUint8(ivArray);
 
-      // Shift feedback by 1 and append the ciphertext byte
-      for (int j = 0; j < blockSize - 1; j++) {
-        feedback[j] = feedback[j + 1];
+    // Create AES block cipher
+    final blockCipher = AESEngine();
+    final keyParam = KeyParameter(key);
+    blockCipher.init(true, keyParam); // Always true for CFB (even decryption)
+
+    final output = Uint8List(data.length);
+    final feedbackRegister = Uint8List.fromList(
+      iv,
+    ); // Copy IV to feedback register
+    final cipherInput = Uint8List(16); // AES block size
+    final cipherOutput = Uint8List(16);
+
+    for (int i = 0; i < data.length; i++) {
+      // Copy feedback register to cipher input
+      cipherInput.setAll(0, feedbackRegister);
+
+      // Encrypt the feedback register
+      blockCipher.processBlock(cipherInput, 0, cipherOutput, 0);
+
+      // XOR the first byte of cipher output with ciphertext
+      output[i] = cipherOutput[0] ^ data[i];
+
+      // Shift feedback register left by 1 byte and add the ciphertext (not plaintext!)
+      for (int j = 0; j < 15; j++) {
+        feedbackRegister[j] = feedbackRegister[j + 1];
       }
-      feedback[blockSize - 1] = cipherText[i];
+      feedbackRegister[15] = data[i]; // Add ciphertext to feedback register
     }
 
     return output;
   }
 
-  Uint8List getMsg(String cmd, String body, String? code) {
-    final prefix = Uint8List.fromList([0, 0, 0, 1, 0, 0]);
-    Uint8List bodyBytes = Uint8List.fromList(utf8.encode(body));
+  /// Create message with command, body, and optional encryption code
+  static Uint8List getMsg(String cmd, String body, String? code) {
+    // Create prefix - exactly matching Python: bytearray(b'\x00\x00\x00\x01\x00\x00')
+    List<int> prefix = [0x00, 0x00, 0x00, 0x01, 0x00, 0x00];
 
+    // Convert body to bytes
+    Uint8List bodyBytes = utf8.encode(body);
+
+    // Encrypt body if code is provided
     if (code != null) {
       bodyBytes = encryptData(code, bodyBytes);
     }
 
-    final cmdBytes = utf8.encode(cmd);
-    final full = Uint8List.fromList([...prefix, ...cmdBytes, ...bodyBytes]);
+    // Convert command to bytes
+    Uint8List cmdBytes = utf8.encode(cmd);
 
-    full[4] = full.length;
-    print("getMsgOutput :$full");
-    return full;
+    // Combine all parts: prefix + cmd + body
+    List<int> all = [...prefix, ...cmdBytes, ...bodyBytes];
+
+    // Set length at position 4: all[4] = len(all)
+    all[4] = all.length;
+
+    // Print the bytes (matching Python's print(list(bytes(all))))
+    print(all);
+
+    return Uint8List.fromList(all);
   }
+
+  // Uint8List getMsg(String cmd, String body, String? code) {
+  //   final prefix = Uint8List.fromList([0, 0, 0, 1, 0, 0]);
+  //   Uint8List bodyBytes = Uint8List.fromList(utf8.encode(body));
+
+  //   if (code != null) {
+  //     bodyBytes = encryptData(code, bodyBytes);
+  //   }
+
+  //   final cmdBytes = utf8.encode(cmd);
+  //   final full = Uint8List.fromList([...prefix, ...cmdBytes, ...bodyBytes]);
+
+  //   full[4] = full.length;
+  //   print("getMsgOutput :$full");
+  //   return full;
+  // }
 
   void verifyEncryption() {
     final body = 'Magic Remote';
