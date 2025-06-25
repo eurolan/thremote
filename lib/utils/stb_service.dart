@@ -1,105 +1,119 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/material.dart';
 import 'package:multicast_dns/multicast_dns.dart';
+import 'package:pointycastle/api.dart';
 import 'package:remote/models/device_model.dart';
-import 'package:pointycastle/digests/sha1.dart';
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:pointycastle/export.dart';
+import 'package:crypto/crypto.dart';
+
+// import 'package:pointycastle/digests/sha1.dart';
 
 class STBRemoteService {
   int port = 40611;
   String devId = "faeac9ec41c2f652";
   String devDescr = "Magic Remote";
-  Socket? _socket;
-
-  Uint8List toUint8(List<int> arr) {
-    return Uint8List.fromList(arr.map((x) => x >= 0 ? x : x + 256).toList());
+  Uint8List toUint8(List<int> list) {
+    return Uint8List.fromList(list.map((e) => e < 0 ? 256 + e : e).toList());
   }
 
-  encrypt.Encrypter getCipher(String password) {
+  Uint8List getIV() {
+    return toUint8([
+      18,
+      111,
+      -15,
+      33,
+      102,
+      71,
+      -112,
+      109,
+      -64,
+      -23,
+      6,
+      -103,
+      -76,
+      99,
+      -34,
+      101,
+    ]);
+  }
+
+  Uint8List sha1Digest(Uint8List data) {
+    final d = sha1.convert(data);
+    return Uint8List.fromList(d.bytes);
+  }
+
+  Uint8List getKeyFromPassword(String password) {
     final pwdBytes = utf8.encode(password);
-    final suffix = [8, 56, -102, -124, 29, -75, -45, 74];
-    final input = Uint8List.fromList(pwdBytes + toUint8(suffix));
-
-    final sha1 = SHA1Digest();
-    final key = sha1.process(input).sublist(0, 16);
-
-    final ivBytes = toUint8([
-      18,
-      111,
-      -15,
-      33,
-      102,
-      71,
-      -112,
-      109,
-      -64,
-      -23,
-      6,
-      -103,
-      -76,
-      99,
-      -34,
-      101,
-    ]);
-
-    final iv = encrypt.IV(ivBytes);
-    final aesKey = encrypt.Key(key);
-
-    return encrypt.Encrypter(encrypt.AES(aesKey, mode: encrypt.AESMode.cfb64));
+    final suffix = toUint8([8, 56, -102, -124, 29, -75, -45, 74]);
+    final combined = Uint8List.fromList([...pwdBytes, ...suffix]);
+    final digest = sha1Digest(combined);
+    return digest.sublist(0, 16); // AES-128
   }
 
-  Uint8List encryptData(String password, Uint8List data) {
-    final cipher = getCipher(password);
-    final ivBytes = toUint8([
-      18,
-      111,
-      -15,
-      33,
-      102,
-      71,
-      -112,
-      109,
-      -64,
-      -23,
-      6,
-      -103,
-      -76,
-      99,
-      -34,
-      101,
-    ]);
-    final iv = encrypt.IV(ivBytes);
-    return cipher.encryptBytes(data, iv: iv).bytes;
+
+  Uint8List encryptData(String password, Uint8List plainText) {
+    final key = getKeyFromPassword(password);
+    final iv = getIV();
+    final blockCipher = AESFastEngine();
+    final blockSize = blockCipher.blockSize;
+
+    final output = Uint8List(plainText.length);
+    final feedback = Uint8List.fromList(iv);
+
+    blockCipher.init(true, KeyParameter(key));
+
+    for (int i = 0; i < plainText.length; i++) {
+      final encryptedBlock = Uint8List(blockSize);
+      blockCipher.processBlock(feedback, 0, encryptedBlock, 0);
+
+      final cipherByte = plainText[i] ^ encryptedBlock[0];
+      output[i] = cipherByte;
+
+      // Shift feedback by 1 and append the ciphertext byte
+      for (int j = 0; j < blockSize - 1; j++) {
+        feedback[j] = feedback[j + 1];
+      }
+      feedback[blockSize - 1] = cipherByte;
+    }
+
+    return output;
   }
 
-  Uint8List decryptData(String password, Uint8List data) {
-    final cipher = getCipher(password);
-    final ivBytes = toUint8([
-      18,
-      111,
-      -15,
-      33,
-      102,
-      71,
-      -112,
-      109,
-      -64,
-      -23,
-      6,
-      -103,
-      -76,
-      99,
-      -34,
-      101,
-    ]);
-    final iv = encrypt.IV(ivBytes);
-    final decrypted = cipher.decryptBytes(encrypt.Encrypted(data), iv: iv);
-    return Uint8List.fromList(decrypted);
+  Uint8List decryptData(String password, Uint8List cipherText) {
+    final key = getKeyFromPassword(password);
+    final iv = getIV();
+    final blockCipher = AESFastEngine();
+    final blockSize = blockCipher.blockSize;
+
+    final output = Uint8List(cipherText.length);
+    final feedback = Uint8List.fromList(iv);
+
+    blockCipher.init(true, KeyParameter(key));
+
+    for (int i = 0; i < cipherText.length; i++) {
+      final encryptedBlock = Uint8List(blockSize);
+      blockCipher.processBlock(feedback, 0, encryptedBlock, 0);
+
+      final plainByte = cipherText[i] ^ encryptedBlock[0];
+      output[i] = plainByte;
+
+      // Shift feedback by 1 and append the ciphertext byte
+      for (int j = 0; j < blockSize - 1; j++) {
+        feedback[j] = feedback[j + 1];
+      }
+      feedback[blockSize - 1] = cipherText[i];
+    }
+
+    return output;
   }
 
-  Uint8List getMessage(String cmd, String body, [String? code]) {
+  Uint8List getMsg(String cmd, String body, String? code) {
     final prefix = Uint8List.fromList([0, 0, 0, 1, 0, 0]);
     Uint8List bodyBytes = Uint8List.fromList(utf8.encode(body));
 
@@ -108,20 +122,31 @@ class STBRemoteService {
     }
 
     final cmdBytes = utf8.encode(cmd);
-    final total = Uint8List.fromList([...prefix, ...cmdBytes, ...bodyBytes]);
-    total[4] = total.length;
+    final full = Uint8List.fromList([...prefix, ...cmdBytes, ...bodyBytes]);
 
-    return total;
+    full[4] = full.length;
+    print("getMsgOutput :$full");
+    return full;
+  }
+
+  void verifyEncryption() {
+    final body = 'Magic Remote';
+    final encrypted = encryptData(
+      "123456",
+      Uint8List.fromList(utf8.encode(body)),
+    );
+    final decrypted = decryptData("123456", encrypted);
+    print('Decrypted: ${utf8.decode(decrypted)}');
   }
 
   Uint8List getReqPairMsg() {
     final body = jsonEncode({"dev_id": devId, "dev_descr": devDescr});
-    return getMessage("pairing-reqpairing-reqpairing-re", body);
+    return getMsg("pairing-reqpairing-reqpairing-re", body, null);
   }
 
   Uint8List getPairCompleteMsg(String code) {
     final body = jsonEncode({"dev_id": devId, "dev_descr": devDescr});
-    return getMessage("pairing-complete-reqpairing-comp", body, code);
+    return getMsg("pairing-complete-reqpairing-comp", body, code);
   }
 
   void printReply(String code, Uint8List data) {
@@ -137,38 +162,35 @@ class STBRemoteService {
     }
   }
 
-  Future<void> sendPairingRequest(String ipAddress) async {
+  Future<Socket?> sendPairingRequest(String ipAddress) async {
     try {
-      _socket = await Socket.connect(ipAddress, port);
-      _socket!.add(getReqPairMsg());
-      await _socket!.flush();
+      final Socket socket = await Socket.connect(ipAddress, port);
+      socket.add(getReqPairMsg());
+      await socket.flush();
+      print("sent pair request");
+      return socket;
     } catch (e) {
       print("Failed to send pairing request: $e");
+      return null;
     }
   }
 
-  Future<bool> completePairing(String code) async {
+  Future<bool> completePairing(Socket socket, String code) async {
     try {
-      if (_socket == null) {
-        print("Socket not connected");
-        throw Exception("Socket not connected");
-      }
+      socket.add(getPairCompleteMsg(code));
+      await socket.flush();
 
-      _socket!.add(getPairCompleteMsg(code));
-      await _socket!.flush();
+      final data = await socket
+          .timeout(const Duration(seconds: 30))
+          .firstWhere((d) => d.isNotEmpty);
 
-      // final data = await _socket!
-      //     .timeout(const Duration(seconds: 30))
-      //     .firstWhere((d) => d.isNotEmpty);
-      final response = await _socket!.first;
-      printReply(code, Uint8List.fromList(response ));
-      // printReply(code, Uint8List.fromList(data));
+      // final response = await socket.first;
+      printReply(code, Uint8List.fromList(data));
       return true;
     } catch (e) {
       print("Error during pairing: $e");
     } finally {
-      _socket?.destroy();
-      _socket = null;
+      socket.destroy();
     }
 
     return false;
@@ -178,18 +200,18 @@ class STBRemoteService {
     const cmd = "rc-code-reqrc-code-reqrc-code-re";
     final body =
         '{"dev_id":"$devId","dev_descr":"$devDescr","rc_code":$rcCode}';
-    return getMessage(cmd, body, code);
+    return getMsg(cmd, body, code);
   }
 
   Uint8List getPingMsg(String code) {
     const cmd = "ping-reqping-reqping-reqping-req";
     final body = '{"dev_id":"$devId"}';
-    return getMessage(cmd, body, code);
+    return getMsg(cmd, body, code);
   }
 
   Uint8List getReqConnectMsg() {
     final body = '{"dev_id":"$devId","dev_descr":"$devDescr"}';
-    return getMessage("connect-reqconnect-reqconnect-re", body);
+    return getMsg("connect-reqconnect-reqconnect-re", body, null);
   }
 
   Future<void> sendRcCode(Socket socket, String code, int rcCode) async {
