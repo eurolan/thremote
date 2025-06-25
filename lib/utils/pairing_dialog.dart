@@ -27,28 +27,33 @@ class _PairingDialogState extends State<PairingDialog> {
   Future<void> pairAndNavigate() async {
     setState(() => _isLoading = true);
     try {
-      await widget.service.completePairing(_codeController.text.trim());
-
-      // Add device to connected devices
-      await SharedPrefrencesHelper().addConnectedDevice(
-        DeviceModel(
-          deviceName: widget.deviceModel.deviceName,
-          ipAddress: widget.deviceModel.ipAddress,
-          pairingCode: _codeController.text,
-        ),
+      bool pairCompleted = await widget.service.completePairing(
+        _codeController.text.trim(),
       );
 
-      // Close dialog first
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
+      if (pairCompleted) {
+        // Add device to connected devices
+        await SharedPrefrencesHelper().addConnectedDevice(
+          DeviceModel(
+            deviceName: widget.deviceModel.deviceName,
+            ipAddress: widget.deviceModel.ipAddress,
+            pairingCode: _codeController.text,
+          ),
+        );
 
-      // Navigate to RemoteControlScreen after dialog closes
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => RemoteControlScreen(deviceModel: widget.deviceModel),
-        ),
-      );
+        // Close dialog first
+        Navigator.of(context).pop();
+        Navigator.of(context).pop();
+
+        // Navigate to RemoteControlScreen after dialog closes
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => RemoteControlScreen(deviceModel: widget.deviceModel),
+          ),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
