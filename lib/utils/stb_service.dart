@@ -319,12 +319,16 @@ class STBRemoteService {
 
   Future<bool> completePairing(Socket socket, String code) async {
     try {
+      print("sending pair code");
       socket.add(getPairCompleteMsg(code));
       await socket.flush();
+      print("pair completed");
 
+      print("getting data");
       final data = await socket
           .timeout(const Duration(seconds: 30))
           .firstWhere((d) => d.isNotEmpty);
+      print("data fetched${data}");
 
       // final response = await socket.first;
       printReply(code, Uint8List.fromList(data));
