@@ -28,6 +28,7 @@ class _PairingDialogState extends State<PairingDialog> {
     setState(() => _isLoading = true);
     try {
       bool pairCompleted = await widget.service.completePairing(
+        widget.deviceModel.ipAddress,
         _codeController.text.trim(),
       );
 
