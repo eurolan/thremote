@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remote/screens/remote_controller_screen.dart';
@@ -6,11 +8,13 @@ import 'package:remote/pref/shared_pref.dart';
 import 'package:remote/utils/stb_service.dart';
 
 class PairingDialog extends StatefulWidget {
+  final Socket socket;
   final STBRemoteService service;
   final DeviceModel deviceModel;
 
   const PairingDialog({
     super.key,
+    required this.socket,
     required this.deviceModel,
     required this.service,
   });
@@ -28,7 +32,7 @@ class _PairingDialogState extends State<PairingDialog> {
     setState(() => _isLoading = true);
     try {
       bool pairCompleted = await widget.service.completePairing(
-        // widget.deviceModel.ipAddress,
+        widget.socket,
         _codeController.text.trim(),
       );
 

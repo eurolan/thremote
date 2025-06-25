@@ -1,31 +1,49 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/material.dart';
 import 'package:multicast_dns/multicast_dns.dart';
+
+import 'package:crypto/crypto.dart' as crypto;
+import 'package:pointycastle/export.dart';
+
+// import 'package:crypto/crypto.dart';
 import 'package:remote/models/device_model.dart';
-import 'package:pointycastle/digests/sha1.dart';
+// import 'package:encrypt/encrypt.dart' as encrypt;
+
+// import 'package:pointycastle/digests/sha1.dart';
 
 class STBRemoteService {
   int port = 40611;
   String devId = "faeac9ec41c2f652";
   String devDescr = "Magic Remote";
-  Socket? _socket;
 
-  Uint8List toUint8(List<int> arr) {
-    return Uint8List.fromList(arr.map((x) => x >= 0 ? x : x + 256).toList());
+  /// Convert array of integers to Uint8List, handling negative values
+  /// Python: def to_uint8(arr): tmp = [x if x >= 0 else x + 256 for x in arr]; return bytes(tmp)
+  static Uint8List toUint8(List<int> arr) {
+    List<int> tmp = arr.map((x) => x >= 0 ? x : x + 256).toList();
+    return Uint8List.fromList(tmp);
   }
 
-  encrypt.Encrypter getCipher(String password) {
-    final pwdBytes = utf8.encode(password);
-    final suffix = [8, 56, -102, -124, 29, -75, -45, 74];
-    final input = Uint8List.fromList(pwdBytes + toUint8(suffix));
+  /// Get AES cipher with CFB mode (segment_size=128, which is 16 bytes - full block)
+  /// Python: return AES.new(key, AES.MODE_CFB, iv, segment_size=128)
+  static CFBBlockCipher getCipher(String pwd, {required bool forEncryption}) {
+    // Convert password to bytes
+    Uint8List pwdBytes = utf8.encode(pwd);
 
-    final sha1 = SHA1Digest();
-    final key = sha1.process(input).sublist(0, 16);
+    // Suffix array with negative values converted
+    List<int> suffix = [8, 56, -102, -124, 29, -75, -45, 74];
+    Uint8List suffixBytes = toUint8(suffix);
 
-    final ivBytes = toUint8([
+    // Concatenate password and suffix
+    Uint8List toHash = Uint8List.fromList([...pwdBytes, ...suffixBytes]);
+
+    // Calculate SHA1 hash and take first 16 bytes as key
+    crypto.Digest sha1Hash = crypto.sha1.convert(toHash);
+    Uint8List key = Uint8List.fromList(sha1Hash.bytes.take(16).toList());
+
+    // IV array with negative values converted
+    List<int> ivArray = [
       18,
       111,
       -15,
@@ -42,17 +60,34 @@ class STBRemoteService {
       99,
       -34,
       101,
-    ]);
+    ];
+    Uint8List iv = toUint8(ivArray);
 
-    final iv = encrypt.IV(ivBytes);
-    final aesKey = encrypt.Key(key);
+    // Create AES block cipher
+    final blockCipher = AESEngine();
 
-    return encrypt.Encrypter(encrypt.AES(aesKey, mode: encrypt.AESMode.cfb64));
+    // Create CFB cipher with 128-bit segments (16 bytes = full block)
+    // This matches Python's segment_size=128
+    final cipher = CFBBlockCipher(blockCipher, 128); // 128 bits = 16 bytes
+
+    final keyParam = KeyParameter(key);
+    final params = ParametersWithIV(keyParam, iv);
+
+    cipher.init(forEncryption, params);
+    return cipher;
   }
 
-  Uint8List encryptData(String password, Uint8List data) {
-    final cipher = getCipher(password);
-    final ivBytes = toUint8([
+  /// Manual CFB-128 encryption (matches Python's segment_size=128)
+  static Uint8List encryptData(String pwd, Uint8List data) {
+    // Get key and IV
+    Uint8List pwdBytes = utf8.encode(pwd);
+    List<int> suffix = [8, 56, -102, -124, 29, -75, -45, 74];
+    Uint8List suffixBytes = toUint8(suffix);
+    Uint8List toHash = Uint8List.fromList([...pwdBytes, ...suffixBytes]);
+    crypto.Digest sha1Hash = crypto.sha1.convert(toHash);
+    Uint8List key = Uint8List.fromList(sha1Hash.bytes.take(16).toList());
+
+    List<int> ivArray = [
       18,
       111,
       -15,
@@ -69,14 +104,65 @@ class STBRemoteService {
       99,
       -34,
       101,
-    ]);
-    final iv = encrypt.IV(ivBytes);
-    return cipher.encryptBytes(data, iv: iv).bytes;
+    ];
+    Uint8List iv = toUint8(ivArray);
+
+    // Create AES block cipher
+    final blockCipher = AESEngine();
+    final keyParam = KeyParameter(key);
+    blockCipher.init(true, keyParam);
+
+    final output = Uint8List(data.length);
+    final feedbackRegister = Uint8List.fromList(iv); // Start with IV
+    final cipherInput = Uint8List(16);
+    final cipherOutput = Uint8List(16);
+
+    int offset = 0;
+    while (offset < data.length) {
+      // Encrypt the feedback register
+      cipherInput.setAll(0, feedbackRegister);
+      blockCipher.processBlock(cipherInput, 0, cipherOutput, 0);
+
+      // Calculate how many bytes to process in this iteration
+      int remainingBytes = data.length - offset;
+      int segmentSize = remainingBytes >= 16 ? 16 : remainingBytes;
+
+      // XOR with plaintext and update feedback register
+      for (int i = 0; i < segmentSize; i++) {
+        output[offset + i] = cipherOutput[i] ^ data[offset + i];
+      }
+
+      // Update feedback register: shift left by segmentSize bytes and add ciphertext
+      if (segmentSize == 16) {
+        // Full segment - feedback register becomes the ciphertext
+        feedbackRegister.setAll(0, output.sublist(offset, offset + 16));
+      } else {
+        // Partial segment - shift left by segmentSize and add partial ciphertext
+        for (int i = 0; i < 16 - segmentSize; i++) {
+          feedbackRegister[i] = feedbackRegister[i + segmentSize];
+        }
+        for (int i = 0; i < segmentSize; i++) {
+          feedbackRegister[16 - segmentSize + i] = output[offset + i];
+        }
+      }
+
+      offset += segmentSize;
+    }
+
+    return output;
   }
 
-  Uint8List decryptData(String password, Uint8List data) {
-    final cipher = getCipher(password);
-    final ivBytes = toUint8([
+  /// Manual CFB-128 decryption (matches Python's segment_size=128)
+  static Uint8List decryptData(String pwd, Uint8List data) {
+    // Get key and IV
+    Uint8List pwdBytes = utf8.encode(pwd);
+    List<int> suffix = [8, 56, -102, -124, 29, -75, -45, 74];
+    Uint8List suffixBytes = toUint8(suffix);
+    Uint8List toHash = Uint8List.fromList([...pwdBytes, ...suffixBytes]);
+    crypto.Digest sha1Hash = crypto.sha1.convert(toHash);
+    Uint8List key = Uint8List.fromList(sha1Hash.bytes.take(16).toList());
+
+    List<int> ivArray = [
       18,
       111,
       -15,
@@ -93,35 +179,116 @@ class STBRemoteService {
       99,
       -34,
       101,
-    ]);
-    final iv = encrypt.IV(ivBytes);
-    final decrypted = cipher.decryptBytes(encrypt.Encrypted(data), iv: iv);
-    return Uint8List.fromList(decrypted);
+    ];
+    Uint8List iv = toUint8(ivArray);
+
+    // Create AES block cipher (always encrypt mode for CFB)
+    final blockCipher = AESEngine();
+    final keyParam = KeyParameter(key);
+    blockCipher.init(true, keyParam);
+
+    final output = Uint8List(data.length);
+    final feedbackRegister = Uint8List.fromList(iv); // Start with IV
+    final cipherInput = Uint8List(16);
+    final cipherOutput = Uint8List(16);
+
+    int offset = 0;
+    while (offset < data.length) {
+      // Encrypt the feedback register
+      cipherInput.setAll(0, feedbackRegister);
+      blockCipher.processBlock(cipherInput, 0, cipherOutput, 0);
+
+      // Calculate how many bytes to process in this iteration
+      int remainingBytes = data.length - offset;
+      int segmentSize = remainingBytes >= 16 ? 16 : remainingBytes;
+
+      // XOR with ciphertext to get plaintext
+      for (int i = 0; i < segmentSize; i++) {
+        output[offset + i] = cipherOutput[i] ^ data[offset + i];
+      }
+
+      // Update feedback register: shift left by segmentSize bytes and add ciphertext (not plaintext!)
+      if (segmentSize == 16) {
+        // Full segment - feedback register becomes the ciphertext
+        feedbackRegister.setAll(0, data.sublist(offset, offset + 16));
+      } else {
+        // Partial segment - shift left by segmentSize and add partial ciphertext
+        for (int i = 0; i < 16 - segmentSize; i++) {
+          feedbackRegister[i] = feedbackRegister[i + segmentSize];
+        }
+        for (int i = 0; i < segmentSize; i++) {
+          feedbackRegister[16 - segmentSize + i] = data[offset + i];
+        }
+      }
+
+      offset += segmentSize;
+    }
+
+    return output;
   }
 
-  Uint8List getMessage(String cmd, String body, [String? code]) {
-    final prefix = Uint8List.fromList([0, 0, 0, 1, 0, 0]);
-    Uint8List bodyBytes = Uint8List.fromList(utf8.encode(body));
+  /// Create message with command, body, and optional encryption code
+  /// Python: def get_msg(cmd, body, code)
+  static Uint8List getMsg(String cmd, String body, String? code) {
+    // Create prefix - Python: bytearray(b'\x00\x00\x00\x01\x00\x00')
+    List<int> prefix = [0x00, 0x00, 0x00, 0x01, 0x00, 0x00];
 
+    // Convert body to bytes - Python: body.encode('utf-8')
+    Uint8List bodyBytes = utf8.encode(body);
+
+    // Encrypt body if code is provided - Python: if code is not None:
     if (code != null) {
       bodyBytes = encryptData(code, bodyBytes);
     }
 
-    final cmdBytes = utf8.encode(cmd);
-    final total = Uint8List.fromList([...prefix, ...cmdBytes, ...bodyBytes]);
-    total[4] = total.length;
+    // Convert command to bytes - Python: cmd.encode('utf-8')
+    Uint8List cmdBytes = utf8.encode(cmd);
 
-    return total;
+    // Combine all parts - Python: all = prefix + cmd.encode('utf-8') + body_bytes
+    List<int> all = [...prefix, ...cmdBytes, ...bodyBytes];
+
+    // Set length at position 4 - Python: all[4] = len(all)
+    all[4] = all.length;
+
+    // Print the bytes - Python: print(list(bytes(all)))
+    print(all);
+
+    return Uint8List.fromList(all);
+  }
+  // Uint8List getMsg(String cmd, String body, String? code) {
+  //   final prefix = Uint8List.fromList([0, 0, 0, 1, 0, 0]);
+  //   Uint8List bodyBytes = Uint8List.fromList(utf8.encode(body));
+
+  //   if (code != null) {
+  //     bodyBytes = encryptData(code, bodyBytes);
+  //   }
+
+  //   final cmdBytes = utf8.encode(cmd);
+  //   final full = Uint8List.fromList([...prefix, ...cmdBytes, ...bodyBytes]);
+
+  //   full[4] = full.length;
+  //   print("getMsgOutput :$full");
+  //   return full;
+  // }
+
+  void verifyEncryption() {
+    final body = 'Magic Remote';
+    final encrypted = encryptData(
+      "123456",
+      Uint8List.fromList(utf8.encode(body)),
+    );
+    final decrypted = decryptData("123456", encrypted);
+    print('Decrypted: ${utf8.decode(decrypted)}');
   }
 
   Uint8List getReqPairMsg() {
     final body = jsonEncode({"dev_id": devId, "dev_descr": devDescr});
-    return getMessage("pairing-reqpairing-reqpairing-re", body);
+    return getMsg("pairing-reqpairing-reqpairing-re", body, null);
   }
 
   Uint8List getPairCompleteMsg(String code) {
     final body = jsonEncode({"dev_id": devId, "dev_descr": devDescr});
-    return getMessage("pairing-complete-reqpairing-comp", body, code);
+    return getMsg("pairing-complete-reqpairing-comp", body, code);
   }
 
   void printReply(String code, Uint8List data) {
@@ -137,38 +304,39 @@ class STBRemoteService {
     }
   }
 
-  Future<void> sendPairingRequest(String ipAddress) async {
+  Future<Socket?> sendPairingRequest(String ipAddress) async {
     try {
-      _socket = await Socket.connect(ipAddress, port);
-      _socket!.add(getReqPairMsg());
-      await _socket!.flush();
+      final Socket socket = await Socket.connect(ipAddress, port);
+      socket.add(getReqPairMsg());
+      await socket.flush();
+      print("sent pair request");
+      return socket;
     } catch (e) {
       print("Failed to send pairing request: $e");
+      return null;
     }
   }
 
-  Future<bool> completePairing(String code) async {
+  Future<bool> completePairing(Socket socket, String code) async {
     try {
-      if (_socket == null) {
-        print("Socket not connected");
-        throw Exception("Socket not connected");
-      }
+      print("sending pair code");
+      socket.add(getPairCompleteMsg(code));
+      await socket.flush();
+      print("pair completed");
 
-      _socket!.add(getPairCompleteMsg(code));
-      await _socket!.flush();
+      print("getting data");
+      final data = await socket
+          .timeout(const Duration(seconds: 30))
+          .firstWhere((d) => d.isNotEmpty);
+      print("data fetched${data}");
 
-      // final data = await _socket!
-      //     .timeout(const Duration(seconds: 30))
-      //     .firstWhere((d) => d.isNotEmpty);
-      final response = await _socket!.first;
-      printReply(code, Uint8List.fromList(response ));
-      // printReply(code, Uint8List.fromList(data));
+      // final response = await socket.first;
+      printReply(code, Uint8List.fromList(data));
       return true;
     } catch (e) {
       print("Error during pairing: $e");
     } finally {
-      _socket?.destroy();
-      _socket = null;
+      socket.destroy();
     }
 
     return false;
@@ -178,18 +346,18 @@ class STBRemoteService {
     const cmd = "rc-code-reqrc-code-reqrc-code-re";
     final body =
         '{"dev_id":"$devId","dev_descr":"$devDescr","rc_code":$rcCode}';
-    return getMessage(cmd, body, code);
+    return getMsg(cmd, body, code);
   }
 
   Uint8List getPingMsg(String code) {
     const cmd = "ping-reqping-reqping-reqping-req";
     final body = '{"dev_id":"$devId"}';
-    return getMessage(cmd, body, code);
+    return getMsg(cmd, body, code);
   }
 
   Uint8List getReqConnectMsg() {
     final body = '{"dev_id":"$devId","dev_descr":"$devDescr"}';
-    return getMessage("connect-reqconnect-reqconnect-re", body);
+    return getMsg("connect-reqconnect-reqconnect-re", body, null);
   }
 
   Future<void> sendRcCode(Socket socket, String code, int rcCode) async {

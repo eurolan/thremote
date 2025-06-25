@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:remote/utils/pairing_dialog.dart';
 import 'package:remote/models/device_model.dart';
@@ -66,17 +68,20 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                           final device = devices[index];
                           return GestureDetector(
                             onTap: () async {
-                              await service.sendPairingRequest(
+                              Socket? socket = await service.sendPairingRequest(
                                 devices[index].ipAddress,
                               );
-                              showDialog(
-                                context: context,
-                                builder:
-                                    (_) => PairingDialog(
-                                      service: service,
-                                      deviceModel: devices[index],
-                                    ),
-                              );
+                              if (socket != null) {
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (_) => PairingDialog(
+                                        socket: socket,
+                                        service: service,
+                                        deviceModel: devices[index],
+                                      ),
+                                );
+                              }
                             },
                             child: Container(
                               margin: EdgeInsets.only(bottom: 8),
