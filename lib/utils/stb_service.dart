@@ -11,7 +11,7 @@ class STBRemoteService {
   int port = 40611;
   String devId = "faeac9ec41c2f652";
   String devDescr = "Magic Remote";
-  late Socket _socket;
+  Socket? _socket;
 
   Uint8List toUint8(List<int> arr) {
     return Uint8List.fromList(arr.map((x) => x >= 0 ? x : x + 256).toList());
@@ -139,35 +139,36 @@ class STBRemoteService {
 
   Future<void> sendPairingRequest(String ipAddress) async {
     try {
-      final socket = await Socket.connect(ipAddress, port);
-      socket.add(getReqPairMsg());
-      await socket.flush();
-      await Future.delayed(Duration(milliseconds: 500));
-      await socket.close();
+      _socket = await Socket.connect(ipAddress, port);
+      _socket!.add(getReqPairMsg());
+      await _socket!.flush();
     } catch (e) {
       print("Failed to send pairing request: $e");
     }
   }
 
-  Future<bool> completePairing(String ipAddress, String code) async {
-    Socket? socket;
+  Future<bool> completePairing(String code) async {
     try {
-      print("connecting for pair completion");
-      socket = await Socket.connect(ipAddress, port);
-      socket.add(getPairCompleteMsg(code));
-      await socket.flush();
+      if (_socket == null) {
+        print("Socket not connected");
+        throw Exception("Socket not connected");
+      }
 
-      print("done connecting");
-      final data = await socket
-          .timeout(Duration(seconds: 30))
-          .firstWhere((d) => d.isNotEmpty);
-      print("data recieved");
-      printReply(code, Uint8List.fromList(data));
+      _socket!.add(getPairCompleteMsg(code));
+      await _socket!.flush();
+
+      // final data = await _socket!
+      //     .timeout(const Duration(seconds: 30))
+      //     .firstWhere((d) => d.isNotEmpty);
+      final response = await _socket!.first;
+      printReply(code, Uint8List.fromList(response ));
+      // printReply(code, Uint8List.fromList(data));
       return true;
     } catch (e) {
       print("Error during pairing: $e");
     } finally {
-      socket?.destroy();
+      _socket?.destroy();
+      _socket = null;
     }
 
     return false;
