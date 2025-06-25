@@ -147,28 +147,22 @@ class STBRemoteService {
     }
   }
 
-  Future<void> completePairing(String code) async {
+  Future<bool> completePairing(String code) async {
     try {
       _socket.add(getPairCompleteMsg(code));
       await _socket.flush();
 
-      _socket.listen(
-        (data) {
-          printReply(code, Uint8List.fromList(data));
-          _socket.destroy();
-        },
-        onError: (error) {
-          print("Socket error: $error");
-          _socket.destroy();
-        },
-        onDone: () {
-          print("Pairing socket closed");
-        },
-      );
+      final data = await _socket.timeout(Duration(seconds: 30)).first;
+      if (data.isNotEmpty) {
+        printReply(code, Uint8List.fromList(data));
+        return true;
+      }
     } catch (e) {
       print("Error during pairing: $e");
+    } finally {
       _socket.destroy();
     }
+    return false;
   }
 
   Uint8List getRcCodeMsg(String code, int rcCode) {
