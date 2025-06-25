@@ -139,29 +139,37 @@ class STBRemoteService {
 
   Future<void> sendPairingRequest(String ipAddress) async {
     try {
-      _socket = await Socket.connect(ipAddress, port);
-      _socket.add(getReqPairMsg());
-      await _socket.flush();
+      final socket = await Socket.connect(ipAddress, port);
+      socket.add(getReqPairMsg());
+      await socket.flush();
+      await Future.delayed(Duration(milliseconds: 500));
+      await socket.close();
     } catch (e) {
       print("Failed to send pairing request: $e");
     }
   }
 
-  Future<bool> completePairing(String code) async {
+  Future<bool> completePairing(String ipAddress, String code) async {
+    Socket? socket;
     try {
-      _socket.add(getPairCompleteMsg(code));
-      await _socket.flush();
+      print("connecting for pair completion");
+      socket = await Socket.connect(ipAddress, port);
+      socket.add(getPairCompleteMsg(code));
+      await socket.flush();
 
-      final data = await _socket.timeout(Duration(seconds: 30)).first;
-      if (data.isNotEmpty) {
-        printReply(code, Uint8List.fromList(data));
-        return true;
-      }
+      print("done connecting");
+      final data = await socket
+          .timeout(Duration(seconds: 30))
+          .firstWhere((d) => d.isNotEmpty);
+      print("data recieved");
+      printReply(code, Uint8List.fromList(data));
+      return true;
     } catch (e) {
       print("Error during pairing: $e");
     } finally {
-      _socket.destroy();
+      socket?.destroy();
     }
+
     return false;
   }
 
