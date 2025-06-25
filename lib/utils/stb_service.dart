@@ -19,23 +19,15 @@ class STBRemoteService {
   String devDescr = "Magic Remote";
 
   /// Convert array of integers to Uint8List, handling negative values
+  /// Python: def to_uint8(arr): tmp = [x if x >= 0 else x + 256 for x in arr]; return bytes(tmp)
   static Uint8List toUint8(List<int> arr) {
     List<int> tmp = arr.map((x) => x >= 0 ? x : x + 256).toList();
     return Uint8List.fromList(tmp);
   }
 
-  /// Encrypt data using password (using manual CFB-8 implementation)
-  static Uint8List encryptData(String pwd, Uint8List data) {
-    return encryptDataManual(pwd, data);
-  }
-
-  /// Decrypt data using password (using manual CFB-8 implementation)
-  static Uint8List decryptData(String pwd, Uint8List data) {
-    return decryptDataManual(pwd, data);
-  }
-
-  /// Alternative implementation using manual CFB processing if the above doesn't work
-  static Uint8List encryptDataManual(String pwd, Uint8List data) {
+  /// Get AES cipher with CFB mode (segment_size=128, which is 16 bytes - full block)
+  /// Python: return AES.new(key, AES.MODE_CFB, iv, segment_size=128)
+  static CFBBlockCipher getCipher(String pwd, {required bool forEncryption}) {
     // Convert password to bytes
     Uint8List pwdBytes = utf8.encode(pwd);
 
@@ -73,53 +65,103 @@ class STBRemoteService {
 
     // Create AES block cipher
     final blockCipher = AESEngine();
+
+    // Create CFB cipher with 128-bit segments (16 bytes = full block)
+    // This matches Python's segment_size=128
+    final cipher = CFBBlockCipher(blockCipher, 128); // 128 bits = 16 bytes
+
     final keyParam = KeyParameter(key);
-    blockCipher.init(true, keyParam); // Always true for CFB encryption
+    final params = ParametersWithIV(keyParam, iv);
+
+    cipher.init(forEncryption, params);
+    return cipher;
+  }
+
+  /// Manual CFB-128 encryption (matches Python's segment_size=128)
+  static Uint8List encryptData(String pwd, Uint8List data) {
+    // Get key and IV
+    Uint8List pwdBytes = utf8.encode(pwd);
+    List<int> suffix = [8, 56, -102, -124, 29, -75, -45, 74];
+    Uint8List suffixBytes = toUint8(suffix);
+    Uint8List toHash = Uint8List.fromList([...pwdBytes, ...suffixBytes]);
+    crypto.Digest sha1Hash = crypto.sha1.convert(toHash);
+    Uint8List key = Uint8List.fromList(sha1Hash.bytes.take(16).toList());
+
+    List<int> ivArray = [
+      18,
+      111,
+      -15,
+      33,
+      102,
+      71,
+      -112,
+      109,
+      -64,
+      -23,
+      6,
+      -103,
+      -76,
+      99,
+      -34,
+      101,
+    ];
+    Uint8List iv = toUint8(ivArray);
+
+    // Create AES block cipher
+    final blockCipher = AESEngine();
+    final keyParam = KeyParameter(key);
+    blockCipher.init(true, keyParam);
 
     final output = Uint8List(data.length);
-    final feedbackRegister = Uint8List.fromList(
-      iv,
-    ); // Copy IV to feedback register
-    final cipherInput = Uint8List(16); // AES block size
+    final feedbackRegister = Uint8List.fromList(iv); // Start with IV
+    final cipherInput = Uint8List(16);
     final cipherOutput = Uint8List(16);
 
-    for (int i = 0; i < data.length; i++) {
-      // Copy feedback register to cipher input
-      cipherInput.setAll(0, feedbackRegister);
-
+    int offset = 0;
+    while (offset < data.length) {
       // Encrypt the feedback register
+      cipherInput.setAll(0, feedbackRegister);
       blockCipher.processBlock(cipherInput, 0, cipherOutput, 0);
 
-      // XOR the first byte of cipher output with plaintext
-      output[i] = cipherOutput[0] ^ data[i];
+      // Calculate how many bytes to process in this iteration
+      int remainingBytes = data.length - offset;
+      int segmentSize = remainingBytes >= 16 ? 16 : remainingBytes;
 
-      // Shift feedback register left by 1 byte and add the ciphertext
-      for (int j = 0; j < 15; j++) {
-        feedbackRegister[j] = feedbackRegister[j + 1];
+      // XOR with plaintext and update feedback register
+      for (int i = 0; i < segmentSize; i++) {
+        output[offset + i] = cipherOutput[i] ^ data[offset + i];
       }
-      feedbackRegister[15] = output[i]; // Add ciphertext to feedback register
+
+      // Update feedback register: shift left by segmentSize bytes and add ciphertext
+      if (segmentSize == 16) {
+        // Full segment - feedback register becomes the ciphertext
+        feedbackRegister.setAll(0, output.sublist(offset, offset + 16));
+      } else {
+        // Partial segment - shift left by segmentSize and add partial ciphertext
+        for (int i = 0; i < 16 - segmentSize; i++) {
+          feedbackRegister[i] = feedbackRegister[i + segmentSize];
+        }
+        for (int i = 0; i < segmentSize; i++) {
+          feedbackRegister[16 - segmentSize + i] = output[offset + i];
+        }
+      }
+
+      offset += segmentSize;
     }
 
     return output;
   }
 
-  /// Alternative manual decryption
-  static Uint8List decryptDataManual(String pwd, Uint8List data) {
-    // Convert password to bytes
+  /// Manual CFB-128 decryption (matches Python's segment_size=128)
+  static Uint8List decryptData(String pwd, Uint8List data) {
+    // Get key and IV
     Uint8List pwdBytes = utf8.encode(pwd);
-
-    // Suffix array with negative values converted
     List<int> suffix = [8, 56, -102, -124, 29, -75, -45, 74];
     Uint8List suffixBytes = toUint8(suffix);
-
-    // Concatenate password and suffix
     Uint8List toHash = Uint8List.fromList([...pwdBytes, ...suffixBytes]);
-
-    // Calculate SHA1 hash and take first 16 bytes as key
     crypto.Digest sha1Hash = crypto.sha1.convert(toHash);
     Uint8List key = Uint8List.fromList(sha1Hash.bytes.take(16).toList());
 
-    // IV array with negative values converted
     List<int> ivArray = [
       18,
       111,
@@ -140,66 +182,79 @@ class STBRemoteService {
     ];
     Uint8List iv = toUint8(ivArray);
 
-    // Create AES block cipher
+    // Create AES block cipher (always encrypt mode for CFB)
     final blockCipher = AESEngine();
     final keyParam = KeyParameter(key);
-    blockCipher.init(true, keyParam); // Always true for CFB (even decryption)
+    blockCipher.init(true, keyParam);
 
     final output = Uint8List(data.length);
-    final feedbackRegister = Uint8List.fromList(
-      iv,
-    ); // Copy IV to feedback register
-    final cipherInput = Uint8List(16); // AES block size
+    final feedbackRegister = Uint8List.fromList(iv); // Start with IV
+    final cipherInput = Uint8List(16);
     final cipherOutput = Uint8List(16);
 
-    for (int i = 0; i < data.length; i++) {
-      // Copy feedback register to cipher input
-      cipherInput.setAll(0, feedbackRegister);
-
+    int offset = 0;
+    while (offset < data.length) {
       // Encrypt the feedback register
+      cipherInput.setAll(0, feedbackRegister);
       blockCipher.processBlock(cipherInput, 0, cipherOutput, 0);
 
-      // XOR the first byte of cipher output with ciphertext
-      output[i] = cipherOutput[0] ^ data[i];
+      // Calculate how many bytes to process in this iteration
+      int remainingBytes = data.length - offset;
+      int segmentSize = remainingBytes >= 16 ? 16 : remainingBytes;
 
-      // Shift feedback register left by 1 byte and add the ciphertext (not plaintext!)
-      for (int j = 0; j < 15; j++) {
-        feedbackRegister[j] = feedbackRegister[j + 1];
+      // XOR with ciphertext to get plaintext
+      for (int i = 0; i < segmentSize; i++) {
+        output[offset + i] = cipherOutput[i] ^ data[offset + i];
       }
-      feedbackRegister[15] = data[i]; // Add ciphertext to feedback register
+
+      // Update feedback register: shift left by segmentSize bytes and add ciphertext (not plaintext!)
+      if (segmentSize == 16) {
+        // Full segment - feedback register becomes the ciphertext
+        feedbackRegister.setAll(0, data.sublist(offset, offset + 16));
+      } else {
+        // Partial segment - shift left by segmentSize and add partial ciphertext
+        for (int i = 0; i < 16 - segmentSize; i++) {
+          feedbackRegister[i] = feedbackRegister[i + segmentSize];
+        }
+        for (int i = 0; i < segmentSize; i++) {
+          feedbackRegister[16 - segmentSize + i] = data[offset + i];
+        }
+      }
+
+      offset += segmentSize;
     }
 
     return output;
   }
 
   /// Create message with command, body, and optional encryption code
+  /// Python: def get_msg(cmd, body, code)
   static Uint8List getMsg(String cmd, String body, String? code) {
-    // Create prefix - exactly matching Python: bytearray(b'\x00\x00\x00\x01\x00\x00')
+    // Create prefix - Python: bytearray(b'\x00\x00\x00\x01\x00\x00')
     List<int> prefix = [0x00, 0x00, 0x00, 0x01, 0x00, 0x00];
 
-    // Convert body to bytes
+    // Convert body to bytes - Python: body.encode('utf-8')
     Uint8List bodyBytes = utf8.encode(body);
 
-    // Encrypt body if code is provided
+    // Encrypt body if code is provided - Python: if code is not None:
     if (code != null) {
       bodyBytes = encryptData(code, bodyBytes);
     }
 
-    // Convert command to bytes
+    // Convert command to bytes - Python: cmd.encode('utf-8')
     Uint8List cmdBytes = utf8.encode(cmd);
 
-    // Combine all parts: prefix + cmd + body
+    // Combine all parts - Python: all = prefix + cmd.encode('utf-8') + body_bytes
     List<int> all = [...prefix, ...cmdBytes, ...bodyBytes];
 
-    // Set length at position 4: all[4] = len(all)
+    // Set length at position 4 - Python: all[4] = len(all)
     all[4] = all.length;
 
-    // Print the bytes (matching Python's print(list(bytes(all))))
+    // Print the bytes - Python: print(list(bytes(all)))
     print(all);
 
     return Uint8List.fromList(all);
   }
-
   // Uint8List getMsg(String cmd, String body, String? code) {
   //   final prefix = Uint8List.fromList([0, 0, 0, 1, 0, 0]);
   //   Uint8List bodyBytes = Uint8List.fromList(utf8.encode(body));
