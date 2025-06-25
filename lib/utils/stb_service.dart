@@ -149,17 +149,22 @@ class STBRemoteService {
 
   Future<void> completePairing(String code) async {
     try {
-      if (code.length != 6) {
-        print("Pairing code must be 6 digits");
-        return;
-      }
-
       _socket.add(getPairCompleteMsg(code));
       await _socket.flush();
 
-      final response = await _socket.first;
-      printReply(code, Uint8List.fromList(response));
-      _socket.destroy();
+      _socket.listen(
+        (data) {
+          printReply(code, Uint8List.fromList(data));
+          _socket.destroy();
+        },
+        onError: (error) {
+          print("Socket error: $error");
+          _socket.destroy();
+        },
+        onDone: () {
+          print("Pairing socket closed");
+        },
+      );
     } catch (e) {
       print("Error during pairing: $e");
       _socket.destroy();
