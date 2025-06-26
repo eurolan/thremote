@@ -42,7 +42,7 @@ class _PairingDialogState extends State<PairingDialog> {
           DeviceModel(
             deviceName: widget.deviceModel.deviceName,
             ipAddress: widget.deviceModel.ipAddress,
-            pairingCode: _codeController.text,
+            pairingCode: _codeController.text.trim(),
           ),
         );
 
@@ -55,7 +55,13 @@ class _PairingDialogState extends State<PairingDialog> {
           context,
           MaterialPageRoute(
             builder:
-                (_) => RemoteControlScreen(deviceModel: widget.deviceModel),
+                (_) => RemoteControlScreen(
+                  deviceModel: DeviceModel(
+                    deviceName: widget.deviceModel.deviceName,
+                    ipAddress: widget.deviceModel.ipAddress,
+                    pairingCode: _codeController.text.trim(),
+                  ),
+                ),
           ),
         );
       }
