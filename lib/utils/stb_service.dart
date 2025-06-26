@@ -3,15 +3,9 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:multicast_dns/multicast_dns.dart';
-
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:pointycastle/export.dart';
-
-// import 'package:crypto/crypto.dart';
 import 'package:remote/models/device_model.dart';
-// import 'package:encrypt/encrypt.dart' as encrypt;
-
-// import 'package:pointycastle/digests/sha1.dart';
 
 class STBRemoteService {
   int port = 40611;
@@ -19,14 +13,12 @@ class STBRemoteService {
   String devDescr = "Magic Remote";
 
   /// Convert array of integers to Uint8List, handling negative values
-  /// Python: def to_uint8(arr): tmp = [x if x >= 0 else x + 256 for x in arr]; return bytes(tmp)
   static Uint8List toUint8(List<int> arr) {
     List<int> tmp = arr.map((x) => x >= 0 ? x : x + 256).toList();
     return Uint8List.fromList(tmp);
   }
 
   /// Get AES cipher with CFB mode (segment_size=128, which is 16 bytes - full block)
-  /// Python: return AES.new(key, AES.MODE_CFB, iv, segment_size=128)
   static CFBBlockCipher getCipher(String pwd, {required bool forEncryption}) {
     // Convert password to bytes
     Uint8List pwdBytes = utf8.encode(pwd);
@@ -67,7 +59,6 @@ class STBRemoteService {
     final blockCipher = AESEngine();
 
     // Create CFB cipher with 128-bit segments (16 bytes = full block)
-    // This matches Python's segment_size=128
     final cipher = CFBBlockCipher(blockCipher, 128); // 128 bits = 16 bytes
 
     final keyParam = KeyParameter(key);
@@ -228,58 +219,37 @@ class STBRemoteService {
   }
 
   /// Create message with command, body, and optional encryption code
-  /// Python: def get_msg(cmd, body, code)
   static Uint8List getMsg(String cmd, String body, String? code) {
-    // Create prefix - Python: bytearray(b'\x00\x00\x00\x01\x00\x00')
     List<int> prefix = [0x00, 0x00, 0x00, 0x01, 0x00, 0x00];
 
-    // Convert body to bytes - Python: body.encode('utf-8')
     Uint8List bodyBytes = utf8.encode(body);
 
-    // Encrypt body if code is provided - Python: if code is not None:
+    // Encrypt body if code is provided
     if (code != null) {
       bodyBytes = encryptData(code, bodyBytes);
     }
 
-    // Convert command to bytes - Python: cmd.encode('utf-8')
+    // Convert command to bytes
     Uint8List cmdBytes = utf8.encode(cmd);
 
-    // Combine all parts - Python: all = prefix + cmd.encode('utf-8') + body_bytes
+    // Combine all parts
     List<int> all = [...prefix, ...cmdBytes, ...bodyBytes];
 
-    // Set length at position 4 - Python: all[4] = len(all)
+    // Set length at position 4
     all[4] = all.length;
-
-    // Print the bytes - Python: print(list(bytes(all)))
-    print(all);
 
     return Uint8List.fromList(all);
   }
-  // Uint8List getMsg(String cmd, String body, String? code) {
-  //   final prefix = Uint8List.fromList([0, 0, 0, 1, 0, 0]);
-  //   Uint8List bodyBytes = Uint8List.fromList(utf8.encode(body));
 
-  //   if (code != null) {
-  //     bodyBytes = encryptData(code, bodyBytes);
-  //   }
-
-  //   final cmdBytes = utf8.encode(cmd);
-  //   final full = Uint8List.fromList([...prefix, ...cmdBytes, ...bodyBytes]);
-
-  //   full[4] = full.length;
-  //   print("getMsgOutput :$full");
-  //   return full;
+  // void verifyEncryption() {
+  //   final body = 'Magic Remote';
+  //   final encrypted = encryptData(
+  //     "123456",
+  //     Uint8List.fromList(utf8.encode(body)),
+  //   );
+  //   final decrypted = decryptData("123456", encrypted);
+  //   print('Decrypted: ${utf8.decode(decrypted)}');
   // }
-
-  void verifyEncryption() {
-    final body = 'Magic Remote';
-    final encrypted = encryptData(
-      "123456",
-      Uint8List.fromList(utf8.encode(body)),
-    );
-    final decrypted = decryptData("123456", encrypted);
-    print('Decrypted: ${utf8.decode(decrypted)}');
-  }
 
   Uint8List getReqPairMsg() {
     final body = jsonEncode({"dev_id": devId, "dev_descr": devDescr});
