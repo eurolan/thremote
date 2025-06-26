@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:multicast_dns/multicast_dns.dart';
 import 'package:crypto/crypto.dart' as crypto;
@@ -330,37 +332,50 @@ class STBRemoteService {
     return getMsg("connect-reqconnect-reqconnect-re", body, null);
   }
 
-  Future<void> sendRcCode(Socket socket, String code, int rcCode) async {
-    socket.add(getRcCodeMsg(code, rcCode));
-    socket.add(getPingMsg(code));
-    await socket.flush();
-
-    final response = await socket.first;
-    printReply(code, Uint8List.fromList(response));
-  }
-
   Future<void> sendKey(String ipAddress, String code, int rcCode) async {
     try {
+      print("Connecting to $ipAddress:$port...");
       final Socket socket = await Socket.connect(ipAddress, port);
+      print("Connected to device.");
+
+      final streamQueue = StreamQueue(socket);
 
       // Step 1: Send connect request
+      print("Sending connection request...");
       socket.add(getReqConnectMsg());
       await socket.flush();
 
       // Step 2: Read and print reply
-      final response1 = await socket.first;
+      print("Waiting for connection reply...");
+      final response1 = await streamQueue.next;
+      print("Connection reply received:");
       printReply(code, Uint8List.fromList(response1));
 
       // Step 3: Send ping
+      print("Sending ping...");
       socket.add(getPingMsg(code));
       await socket.flush();
 
-      final response2 = await socket.first;
+      // Step 4: Read and print reply
+      print("Waiting for ping reply...");
+      final response2 = await streamQueue.next;
+      print("Ping reply received:");
       printReply(code, Uint8List.fromList(response2));
 
-      // Step 4: Send RC code and ping
-      await sendRcCode(socket, code, rcCode);
+      // Step 5: Send RC code and ping
+      print("Sending RC code ($rcCode) and another ping...");
+      socket.add(getRcCodeMsg(code, rcCode));
+      socket.add(getPingMsg(code));
+      await socket.flush();
 
+      // Step 6: Read and print reply
+      print("Waiting for RC code reply...");
+      final response3 = await streamQueue.next;
+      print("RC code reply received:");
+      printReply(code, Uint8List.fromList(response3));
+
+      print("All messages sent successfully. Closing connection.");
+      await streamQueue.cancel();
       socket.destroy();
     } catch (e) {
       print("sendKey error: $e");
