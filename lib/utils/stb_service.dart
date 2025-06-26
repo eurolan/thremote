@@ -371,7 +371,7 @@ class STBRemoteService {
 
   Future<void> sendKey(String ipAddress, String code, int rcCode) async {
     try {
-      final socket = await Socket.connect(ipAddress, port);
+      final Socket socket = await Socket.connect(ipAddress, port);
 
       // Step 1: Send connect request
       socket.add(getReqConnectMsg());

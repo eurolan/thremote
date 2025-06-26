@@ -44,21 +44,12 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
               SizedBox(height: 20),
               FutureBuilder(
                 future: service.discoverStbsByMdns(),
-                // future: Future.delayed(Duration(seconds: 3)),
                 builder: (
                   BuildContext context,
                   AsyncSnapshot<dynamic> snapshot,
                 ) {
                   if (snapshot.hasData) {
                     devices = snapshot.data;
-                    // if (!snapshot.hasData) {
-                    // devices = [
-                    //   DeviceModel(
-                    //     deviceName: "TH300",
-                    //     ipAddress: "192.168.25",
-                    //     pairingCode: null,
-                    //   ),
-                    // ];
 
                     if (devices.isNotEmpty) {
                       return ListView.builder(
