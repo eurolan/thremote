@@ -1,9 +1,9 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:remote/models/device_model.dart';
+import 'package:remote/utils/channel_pill.dart';
 import 'package:remote/utils/pie_dpad_widget.dart';
 import 'package:remote/utils/stb_service.dart';
+import 'package:remote/utils/volume_pill.dart';
 
 class RemoteControlScreen extends StatefulWidget {
   final DeviceModel deviceModel;
@@ -52,108 +52,20 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     );
   }
 
-  Widget buildStyledDPad() {
+  Widget _iconCircleButton(IconData icon, int rcCode) {
     return Container(
-      width: 250,
-      height: 250,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // UP
-          // Positioned(
-          //   top: 20,
-          //   child: IconButton(
-          //     icon: const Icon(
-          //       Icons.arrow_drop_up,
-          //       size: 24,
-          //       color: Colors.black87,
-          //     ),
-          //     onPressed: () async => await sendSTBKey(189),
-          //   ),
-          // ),
-          Positioned(
-            top: 20,
-            child: ElevatedButton(
-              onPressed: () async => await sendSTBKey(189),
-              style: ElevatedButton.styleFrom(
-                shape: const CircleBorder(),
-                padding: const EdgeInsets.all(16), // Increases touch area
-                backgroundColor: Colors.white, // Match D-pad color
-                elevation: 2,
-                shadowColor: Colors.black26,
-              ),
-              child: const Icon(
-                Icons.arrow_drop_up,
-                size: 24,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          // DOWN
-          Positioned(
-            bottom: 20,
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_drop_down,
-                size: 24,
-                color: Colors.black87,
-              ),
-              onPressed: () async => await sendSTBKey(190),
-            ),
-          ),
-
-          // LEFT
-          Positioned(
-            left: 20,
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_left,
-                size: 24,
-                color: Colors.black87,
-              ),
-              onPressed: () async => await sendSTBKey(191),
-            ),
-          ),
-
-          // RIGHT
-          Positioned(
-            right: 20,
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_right,
-                size: 24,
-                color: Colors.black87,
-              ),
-              onPressed: () async => await sendSTBKey(171),
-            ),
-          ),
-
-          // Center OK with border
-          GestureDetector(
-            onTap: () async => await sendSTBKey(172),
-            child: Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.pink.shade700, width: 3),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'OK',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey,
-                ),
-              ),
-            ),
-          ),
-        ],
+      margin: const EdgeInsets.all(8),
+      width: 60,
+      height: 60,
+      child: ElevatedButton(
+        onPressed: () async => await sendSTBKey(rcCode),
+        style: ElevatedButton.styleFrom(
+          shape: const CircleBorder(),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          padding: EdgeInsets.zero,
+        ),
+        child: Icon(icon, color: Colors.black54, size: 20),
       ),
     );
   }
@@ -247,60 +159,53 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                   ),
                 ],
               ),
-              PieDPad(
-                onClick: (code) async {
-                  if (code == 189) {
-                    print("up");
-                  }
-                  if (code == 191) {
-                    print("left");
-                  }
-                  if (code == 171) {
-                    print("right");
-                  }
-                  if (code == 190) {
-                    print("down");
-                  }
-                  print(code);
-                  // await remote.sendKey(
-                  //   widget.deviceModel.ipAddress,
-                  //   widget.deviceModel.pairingCode!,
-                  //   code,
-                  // );
-                },
+              SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  VolumeControlPill(
+                    onClick: (code) async {
+                      await sendSTBKey(code);
+                    },
+                  ),
+                  PieDPad(
+                    onClick: (code) async {
+                      await sendSTBKey(code);
+                    },
+                  ),
+                  ChannelControlPill(
+                    onClick: (code) async {
+                      await sendSTBKey(code);
+                    },
+                  ),
+                ],
               ),
-
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [remoteButton("UP", 189)],
-              // ),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //   children: [
-              //     remoteButton("LEFT", 191),
-              //     remoteButton("OK", 172),
-              //     remoteButton("RIGHT", 171),
-              //   ],
-              // ),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [remoteButton("DOWN", 190)],
-              // ),
-              // SizedBox(height: 20),
-              // Wrap(
-              //   spacing: 8,
-              //   runSpacing: 8,
-              //   children: [
-              //     remoteButton("HOME", 141),
-              //     remoteButton("BACK", 143),
-              //     remoteButton("VOL+", 146),
-              //     remoteButton("VOL-", 147),
-              //     remoteButton("CH+", 188),
-              //     remoteButton("CH-", 145),
-              //     remoteButton("MUTE", 176),
-              //     remoteButton("POWER", 140),
-              //   ],
-              // ),
+              SizedBox(height: 24),
+              Column(
+                children: [
+                  // Home, Back, Info, Mute
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _iconCircleButton(Icons.arrow_back, 143),
+                      _iconCircleButton(Icons.home, 141),
+                      _iconCircleButton(Icons.info_outline, 157),
+                      _iconCircleButton(Icons.volume_off, 176),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Rewind, Play/Pause, Fast Forward
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _iconCircleButton(Icons.fast_rewind, 150),
+                      _iconCircleButton(Icons.play_arrow, 139),
+                      _iconCircleButton(Icons.fast_forward, 144),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
         ),

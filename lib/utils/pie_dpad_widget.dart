@@ -8,7 +8,7 @@ class PieDPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double size = 250;
+    double size = 230;
 
     return SizedBox(
       width: size,
@@ -44,20 +44,20 @@ class PieDPad extends StatelessWidget {
           GestureDetector(
             onTap: () async => await onClick(172),
             child: Container(
-              width: 90,
-              height: 90,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.grey,
-                border: Border.all(color: Colors.grey.shade600, width: 2),
+                color: Colors.white,
+                border: Border.all(
+                  color: const Color.fromRGBO(192, 24, 81, 1),
+                  width: 2,
+                ),
               ),
               alignment: Alignment.center,
               child: const Text(
                 "OK",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, color: Colors.black54),
               ),
             ),
           ),
