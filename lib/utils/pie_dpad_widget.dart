@@ -35,14 +35,6 @@ class PieDPad extends StatelessWidget {
           ),
 
           // Pie Slices (Triangle Taps)
-          // _buildTriangle(Direction.up, 189, size),
-          // _buildTriangle(Direction.down, 190, size),
-          // _buildTriangle(Direction.right, 171, size),
-          // _buildTriangle(Direction.left, 191, size),
-          // _buildTriangle(Direction.up, 189, size),
-          // _buildTriangle(Direction.down, 190, size),
-          // _buildTriangle(Direction.right, 171, size),
-          // _buildTriangle(Direction.left, 191, size),
           _buildTriangle(Direction.right, 171, size),
           _buildTriangle(Direction.left, 191, size),
           _buildTriangle(Direction.down, 190, size),
@@ -148,11 +140,12 @@ class PieSegmentClipper extends CustomClipper<Path> {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
+    // Fixed angle mappings to align with visual directions
     final angleOffset = {
-      Direction.up: -pi / 4,
-      Direction.right: pi / 4,
-      Direction.down: 3 * pi / 4,
-      Direction.left: 5 * pi / 4,
+      Direction.up: -3 * pi / 4, // Top segment
+      Direction.right: -pi / 4, // Right segment
+      Direction.down: pi / 4, // Bottom segment
+      Direction.left: 3 * pi / 4, // Left segment
     };
 
     final startAngle = angleOffset[direction]!;
