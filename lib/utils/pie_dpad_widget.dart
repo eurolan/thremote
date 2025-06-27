@@ -22,21 +22,31 @@ class PieDPad extends StatelessWidget {
             height: size,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.black87,
+              color: Colors.white,
             ),
           ),
 
           // Diagonal dividers
-          CustomPaint(
-            size: Size(size, size),
-            painter: DiagonalDividerPainter(),
+          ClipOval(
+            child: CustomPaint(
+              size: Size(size, size),
+              painter: DiagonalDividerPainter(),
+            ),
           ),
 
           // Pie Slices (Triangle Taps)
-          _buildTriangle(Direction.up, 189, size),
-          _buildTriangle(Direction.down, 190, size),
+          // _buildTriangle(Direction.up, 189, size),
+          // _buildTriangle(Direction.down, 190, size),
+          // _buildTriangle(Direction.right, 171, size),
+          // _buildTriangle(Direction.left, 191, size),
+          // _buildTriangle(Direction.up, 189, size),
+          // _buildTriangle(Direction.down, 190, size),
+          // _buildTriangle(Direction.right, 171, size),
+          // _buildTriangle(Direction.left, 191, size),
           _buildTriangle(Direction.right, 171, size),
           _buildTriangle(Direction.left, 191, size),
+          _buildTriangle(Direction.down, 190, size),
+          _buildTriangle(Direction.up, 189, size),
 
           // Center OK Button
           GestureDetector(
@@ -46,7 +56,7 @@ class PieDPad extends StatelessWidget {
               height: 90,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.grey.shade700,
+                color: Colors.grey,
                 border: Border.all(color: Colors.grey.shade600, width: 2),
               ),
               alignment: Alignment.center,
@@ -74,7 +84,7 @@ class PieDPad extends StatelessWidget {
           height: size,
           color: Colors.transparent,
           alignment: _alignment(direction),
-          child: Icon(_iconData(direction), color: Colors.white70, size: 20),
+          child: Icon(_iconData(direction), color: Colors.black, size: 20),
         ),
       ),
     );
@@ -115,7 +125,7 @@ class DiagonalDividerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint =
         Paint()
-          ..color = Colors.grey.shade800
+          ..color = Colors.black12
           ..strokeWidth = 2;
 
     canvas.drawLine(Offset(0, 0), Offset(size.width, size.height), paint);
