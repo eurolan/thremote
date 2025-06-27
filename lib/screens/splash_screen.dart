@@ -27,13 +27,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Center(
         child: Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
           clipBehavior: Clip.antiAlias,
           child: Image(
             image: AssetImage('assets/images/th300.jpg'),
-            height: 150,
+            height: 350,
           ),
         ),
       ),

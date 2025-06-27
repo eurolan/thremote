@@ -14,6 +14,9 @@ class STBRemoteService {
   String devId = "faeac9ec41c2f652";
   String devDescr = "Magic Remote";
 
+  Socket? _socket;
+  StreamQueue<List<int>>? _streamQueue;
+
   /// Convert array of integers to Uint8List, handling negative values
   static Uint8List toUint8(List<int> arr) {
     List<int> tmp = arr.map((x) => x >= 0 ? x : x + 256).toList();
@@ -332,54 +335,48 @@ class STBRemoteService {
     return getMsg("connect-reqconnect-reqconnect-re", body, null);
   }
 
+  Future<void> connect(String ip) async {
+    if (_socket == null) {
+      print("connecting to socket");
+      _socket = await Socket.connect(ip, port);
+      _streamQueue = StreamQueue(_socket!);
+      print("Persistent connection established.");
+    }
+  }
+
   Future<void> sendKey(String ipAddress, String code, int rcCode) async {
     try {
-      print("Connecting to $ipAddress:$port...");
-      final Socket socket = await Socket.connect(ipAddress, port);
-      print("Connected to device.");
+      await connect(ipAddress);
 
-      final streamQueue = StreamQueue(socket);
-
-      // Step 1: Send connect request
-      print("Sending connection request...");
-      socket.add(getReqConnectMsg());
-      await socket.flush();
-
-      // Step 2: Read and print reply
-      print("Waiting for connection reply...");
-      final response1 = await streamQueue.next;
-      print("Connection reply received:");
+      // Send connect
+      _socket!.add(getReqConnectMsg());
+      await _socket!.flush();
+      final response1 = await _streamQueue!.next;
       printReply(code, Uint8List.fromList(response1));
 
-      // Step 3: Send ping
-      print("Sending ping...");
-      socket.add(getPingMsg(code));
-      await socket.flush();
-
-      // Step 4: Read and print reply
-      print("Waiting for ping reply...");
-      final response2 = await streamQueue.next;
-      print("Ping reply received:");
+      // Send ping
+      _socket!.add(getPingMsg(code));
+      await _socket!.flush();
+      final response2 = await _streamQueue!.next;
       printReply(code, Uint8List.fromList(response2));
 
-      // Step 5: Send RC code and ping
-      print("Sending RC code ($rcCode) and another ping...");
-      socket.add(getRcCodeMsg(code, rcCode));
-      socket.add(getPingMsg(code));
-      await socket.flush();
-
-      // Step 6: Read and print reply
-      print("Waiting for RC code reply...");
-      final response3 = await streamQueue.next;
-      print("RC code reply received:");
+      // Send RC + ping
+      _socket!.add(getRcCodeMsg(code, rcCode));
+      _socket!.add(getPingMsg(code));
+      await _socket!.flush();
+      final response3 = await _streamQueue!.next;
       printReply(code, Uint8List.fromList(response3));
-
-      print("All messages sent successfully. Closing connection.");
-      await streamQueue.cancel();
-      socket.destroy();
     } catch (e) {
       print("sendKey error: $e");
+      disconnect(); // Optional: force reconnect on next send
     }
+  }
+
+  void disconnect() {
+    _streamQueue?.cancel();
+    _socket?.destroy();
+    _socket = null;
+    _streamQueue = null;
   }
 
   Future<List<DeviceModel>> discoverStbsByMdns() async {
