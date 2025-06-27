@@ -337,6 +337,7 @@ class STBRemoteService {
 
   Future<void> connect(String ip) async {
     if (_socket == null) {
+      print("connecting to socket");
       _socket = await Socket.connect(ip, port);
       _streamQueue = StreamQueue(_socket!);
       print("Persistent connection established.");
