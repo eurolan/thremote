@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/channel_pill.dart';
 import 'package:remote/utils/pie_dpad_widget.dart';
@@ -18,6 +19,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   final remote = STBRemoteService();
 
   Future<void> sendSTBKey(int code) async {
+    HapticFeedback.mediumImpact();
     await remote.sendKey(
       widget.deviceModel.ipAddress,
       widget.deviceModel.pairingCode!,

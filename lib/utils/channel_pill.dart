@@ -26,15 +26,21 @@ class ChannelControlPill extends StatelessWidget {
         children: [
           // Top half (CH+)
           Expanded(
-            child: InkWell(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(30),
+            child: ElevatedButton(
+              onPressed: () async => await onClick(188),
+              style: ElevatedButton.styleFrom(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: EdgeInsets.zero,
+                elevation: 0,
               ),
-              onTap: () async => await onClick(188),
-              child: Column(
+              child: const Column(
                 children: [
                   SizedBox(height: 16),
-                  Icon(size: 20, CupertinoIcons.chevron_up, color: Colors.grey),
+                  Icon(CupertinoIcons.chevron_up, color: Colors.grey, size: 20),
                 ],
               ),
             ),
@@ -54,18 +60,26 @@ class ChannelControlPill extends StatelessWidget {
 
           // Bottom half (CH-)
           Expanded(
-            child: InkWell(
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(30),
+            child: ElevatedButton(
+              onPressed: () async => await onClick(145),
+              style: ElevatedButton.styleFrom(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(30),
+                  ),
+                ),
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: EdgeInsets.zero,
+                elevation: 0,
               ),
-              onTap: () async => await onClick(145),
-              child: Column(
+              child: const Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Icon(
-                    size: 20,
                     CupertinoIcons.chevron_down,
                     color: Colors.grey,
+                    size: 20,
                   ),
                   SizedBox(height: 16),
                 ],

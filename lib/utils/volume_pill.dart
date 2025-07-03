@@ -26,20 +26,25 @@ class VolumeControlPill extends StatelessWidget {
         children: [
           // Top half (vol+)
           Expanded(
-            child: InkWell(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(30),
+            child: ElevatedButton(
+              onPressed: () async => await onClick(146),
+              style: ElevatedButton.styleFrom(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: EdgeInsets.zero,
+                elevation: 0,
               ),
-              onTap: () async => await onClick(146),
-              child: Column(
+              child: const Column(
                 children: [
                   SizedBox(height: 16),
-                  Icon(size: 20, CupertinoIcons.add, color: Colors.grey),
+                  Icon(CupertinoIcons.add, color: Colors.grey, size: 20),
                 ],
               ),
             ),
           ),
-
           // Middle label (not clickable)
           Center(
             child: Text(
@@ -54,15 +59,23 @@ class VolumeControlPill extends StatelessWidget {
 
           // Bottom half (vol-)
           Expanded(
-            child: InkWell(
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(30),
+            child: ElevatedButton(
+              onPressed: () async => await onClick(147),
+              style: ElevatedButton.styleFrom(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(30),
+                  ),
+                ),
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: EdgeInsets.zero,
+                elevation: 0,
               ),
-              onTap: () async => await onClick(147),
-              child: Column(
+              child: const Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Icon(size: 20, CupertinoIcons.minus, color: Colors.grey),
+                  Icon(CupertinoIcons.minus, color: Colors.grey, size: 20),
                   SizedBox(height: 16),
                 ],
               ),
