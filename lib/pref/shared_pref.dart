@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:remote/models/device_model.dart';
+import 'package:remote/utils/stb_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPrefrencesHelper {
@@ -93,6 +94,31 @@ class SharedPrefrencesHelper {
 
     final updatedJsonList =
         connectedDevices.map((d) => json.encode(d.toJson())).toList();
+    await preferences?.setStringList('connectedDevices', updatedJsonList);
+  }
+
+  Future<void> updateStoredDevicesFromDiscovery() async {
+    final service = STBRemoteService();
+    final List<DeviceModel> discoveredDevices =
+        await service.discoverStbsByMdns();
+    final List<DeviceModel> storedDevices = await loadConnectedDevices();
+
+    final List<DeviceModel> updatedDevices =
+        storedDevices.map((stored) {
+          final match = discoveredDevices.firstWhere(
+            (found) => found.mdnsName == stored.mdnsName,
+            orElse: () => stored,
+          );
+
+          if (match.ipAddress != stored.ipAddress) {
+            return stored.copyWith(ipAddress: match.ipAddress);
+          }
+
+          return stored;
+        }).toList();
+
+    final updatedJsonList =
+        updatedDevices.map((model) => json.encode(model.toJson())).toList();
     await preferences?.setStringList('connectedDevices', updatedJsonList);
   }
 }
