@@ -1,6 +1,4 @@
 import 'dart:convert';
-
-import 'package:flutter/material.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +27,7 @@ class SharedPrefrencesHelper {
     final List<String>? jsonStringList = preferences?.getStringList(
       'connectedDevices',
     );
+
     List<DeviceModel> connectedDevices =
         jsonStringList != null
             ? jsonStringList
@@ -36,21 +35,18 @@ class SharedPrefrencesHelper {
                 .toList()
             : [];
 
-    // Check if model already exists
-    final exists = connectedDevices.any(
+    // Remove existing device with same IP (if any)
+    connectedDevices.removeWhere(
       (model) => model.ipAddress == newDevice.ipAddress,
     );
 
-    if (!exists) {
-      connectedDevices.add(newDevice);
+    // Add the new device
+    connectedDevices.add(newDevice);
 
-      // Save back to SharedPreferences
-      final updatedJsonList =
-          connectedDevices.map((model) => json.encode(model.toJson())).toList();
-      await preferences?.setStringList('connectedDevices', updatedJsonList);
-    } else {
-      debugPrint('Model with name "${newDevice.deviceName}" already exists.');
-    }
+    // Save updated list back to SharedPreferences
+    final updatedJsonList =
+        connectedDevices.map((model) => json.encode(model.toJson())).toList();
+    await preferences?.setStringList('connectedDevices', updatedJsonList);
   }
 
   // Rename a device by IP address
