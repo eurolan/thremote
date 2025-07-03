@@ -403,6 +403,7 @@ class STBRemoteService {
 
           foundDevices.add(
             DeviceModel(
+              mdnsName: deviceName,
               deviceName: deviceName,
               ipAddress: ipAddress,
               pairingCode: null,

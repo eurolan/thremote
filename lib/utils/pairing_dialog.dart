@@ -40,6 +40,7 @@ class _PairingDialogState extends State<PairingDialog> {
         // Add device to connected devices
         await SharedPrefrencesHelper().addConnectedDevice(
           DeviceModel(
+            mdnsName: widget.deviceModel.mdnsName,
             deviceName: widget.deviceModel.deviceName,
             ipAddress: widget.deviceModel.ipAddress,
             pairingCode: _codeController.text.trim(),
@@ -57,6 +58,7 @@ class _PairingDialogState extends State<PairingDialog> {
             builder:
                 (_) => RemoteControlScreen(
                   deviceModel: DeviceModel(
+                    mdnsName: widget.deviceModel.mdnsName,
                     deviceName: widget.deviceModel.deviceName,
                     ipAddress: widget.deviceModel.ipAddress,
                     pairingCode: _codeController.text.trim(),
