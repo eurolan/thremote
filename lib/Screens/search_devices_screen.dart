@@ -21,29 +21,29 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
     return Scaffold(
       // backgroundColor: Color(0xFFFFFDF7),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Icon(Icons.arrow_back_ios_new_rounded),
-                    ),
-                    SizedBox(width: 16),
-                    Text(
-                      "Search devices",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                FutureBuilder(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Icon(Icons.arrow_back_ios_new_rounded),
+                  ),
+                  SizedBox(width: 16),
+                  Text(
+                    "Search devices",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Expanded(
+                child: FutureBuilder(
                   future: service.discoverStbsByMdns(),
                   builder: (
                     BuildContext context,
@@ -51,10 +51,10 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                   ) {
                     if (snapshot.hasData) {
                       devices = snapshot.data;
-          
+
                       if (devices.isNotEmpty) {
                         return ListView.builder(
-                          shrinkWrap: true,
+                          // shrinkWrap: true,
                           itemCount: devices.length,
                           itemBuilder: (context, index) {
                             final device = devices[index];
@@ -96,14 +96,14 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                                   children: [
                                     Icon(Icons.tv, color: Colors.black, size: 24),
                                     SizedBox(width: 12),
-          
+                        
                                     Expanded(
                                       child: Text(
                                         device.deviceName,
                                         style: TextStyle(fontSize: 16),
                                       ),
                                     ),
-          
+                        
                                     Icon(
                                       Icons.arrow_forward_ios,
                                       size: 14,
@@ -116,12 +116,10 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                           },
                         );
                       } else {
-                        return Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [Center(child: Text("No devices found"))],
-                          ),
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [Center(child: Text("No devices found"))],
                         );
                       }
                     }
@@ -130,17 +128,15 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                         child: Text("An error occured! ${snapshot.error}"),
                       );
                     }
-                    return Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [Center(child: CircularProgressIndicator())],
-                      ),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [Center(child: CircularProgressIndicator())],
                     );
                   },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
