@@ -1,7 +1,6 @@
 import 'dart:convert';
-
-import 'package:flutter/material.dart';
 import 'package:remote/models/device_model.dart';
+import 'package:remote/utils/stb_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPrefrencesHelper {
@@ -29,6 +28,7 @@ class SharedPrefrencesHelper {
     final List<String>? jsonStringList = preferences?.getStringList(
       'connectedDevices',
     );
+
     List<DeviceModel> connectedDevices =
         jsonStringList != null
             ? jsonStringList
@@ -36,21 +36,18 @@ class SharedPrefrencesHelper {
                 .toList()
             : [];
 
-    // Check if model already exists
-    final exists = connectedDevices.any(
+    // Remove existing device with same IP (if any)
+    connectedDevices.removeWhere(
       (model) => model.ipAddress == newDevice.ipAddress,
     );
 
-    if (!exists) {
-      connectedDevices.add(newDevice);
+    // Add the new device
+    connectedDevices.add(newDevice);
 
-      // Save back to SharedPreferences
-      final updatedJsonList =
-          connectedDevices.map((model) => json.encode(model.toJson())).toList();
-      await preferences?.setStringList('connectedDevices', updatedJsonList);
-    } else {
-      debugPrint('Model with name "${newDevice.deviceName}" already exists.');
-    }
+    // Save updated list back to SharedPreferences
+    final updatedJsonList =
+        connectedDevices.map((model) => json.encode(model.toJson())).toList();
+    await preferences?.setStringList('connectedDevices', updatedJsonList);
   }
 
   // Rename a device by IP address
@@ -97,6 +94,31 @@ class SharedPrefrencesHelper {
 
     final updatedJsonList =
         connectedDevices.map((d) => json.encode(d.toJson())).toList();
+    await preferences?.setStringList('connectedDevices', updatedJsonList);
+  }
+
+  Future<void> updateStoredDevicesFromDiscovery() async {
+    final service = STBRemoteService();
+    final List<DeviceModel> discoveredDevices =
+        await service.discoverStbsByMdns();
+    final List<DeviceModel> storedDevices = await loadConnectedDevices();
+
+    final List<DeviceModel> updatedDevices =
+        storedDevices.map((stored) {
+          final match = discoveredDevices.firstWhere(
+            (found) => found.mdnsName == stored.mdnsName,
+            orElse: () => stored,
+          );
+
+          if (match.ipAddress != stored.ipAddress) {
+            return stored.copyWith(ipAddress: match.ipAddress);
+          }
+
+          return stored;
+        }).toList();
+
+    final updatedJsonList =
+        updatedDevices.map((model) => json.encode(model.toJson())).toList();
     await preferences?.setStringList('connectedDevices', updatedJsonList);
   }
 }

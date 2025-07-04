@@ -41,24 +41,22 @@ class PieDPad extends StatelessWidget {
           _buildTriangle(Direction.up, 189, size),
 
           // Center OK Button
-          GestureDetector(
-            onTap: () async => await onClick(172),
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                border: Border.all(
-                  color: const Color.fromRGBO(192, 24, 81, 1),
-                  width: 2,
-                ),
+          ElevatedButton(
+            onPressed: () async => await onClick(172),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              shape: const CircleBorder(),
+              side: const BorderSide(
+                color: Color.fromRGBO(192, 24, 81, 1),
+                width: 2,
               ),
-              alignment: Alignment.center,
-              child: const Text(
-                "OK",
-                style: TextStyle(fontSize: 20, color: Colors.black54),
-              ),
+              elevation: 0, 
+              padding: EdgeInsets.zero, 
+              fixedSize: const Size(80, 80), 
+            ),
+            child: const Text(
+              "OK",
+              style: TextStyle(fontSize: 20, color: Colors.black54),
             ),
           ),
         ],
@@ -69,13 +67,18 @@ class PieDPad extends StatelessWidget {
   Widget _buildTriangle(Direction direction, int code, double size) {
     return ClipPath(
       clipper: PieSegmentClipper(direction),
-      child: GestureDetector(
-        onTap: () async => await onClick(code),
-        child: Container(
-          width: size,
-          height: size,
-          color: Colors.transparent,
-          alignment: _alignment(direction),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: EdgeInsets.zero,
+            alignment: _alignment(direction),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          ),
+          onPressed: () async => await onClick(code),
           child: Icon(_iconData(direction), color: Colors.black, size: 20),
         ),
       ),
