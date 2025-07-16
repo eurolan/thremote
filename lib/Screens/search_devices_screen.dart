@@ -42,101 +42,99 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                 ],
               ),
               SizedBox(height: 20),
-              FutureBuilder(
-                future: service.discoverStbsByMdns(),
-                builder: (
-                  BuildContext context,
-                  AsyncSnapshot<dynamic> snapshot,
-                ) {
-                  if (snapshot.hasData) {
-                    devices = snapshot.data;
+              Expanded(
+                child: FutureBuilder(
+                  future: service.discoverStbsByMdns(),
+                  builder: (
+                    BuildContext context,
+                    AsyncSnapshot<dynamic> snapshot,
+                  ) {
+                    if (snapshot.hasData) {
+                      devices = snapshot.data;
 
-                    if (devices.isNotEmpty) {
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: devices.length,
-                        itemBuilder: (context, index) {
-                          final device = devices[index];
-                          return GestureDetector(
-                            onTap: () async {
-                              Socket? socket = await service.sendPairingRequest(
-                                devices[index].ipAddress,
-                              );
-                              if (socket != null) {
-                                showDialog(
-                                  context: context,
-                                  builder:
-                                      (_) => PairingDialog(
-                                        socket: socket,
-                                        service: service,
-                                        deviceModel: devices[index],
-                                      ),
+                      if (devices.isNotEmpty) {
+                        return ListView.builder(
+                          // shrinkWrap: true,
+                          itemCount: devices.length,
+                          itemBuilder: (context, index) {
+                            final device = devices[index];
+                            return GestureDetector(
+                              onTap: () async {
+                                Socket? socket = await service.sendPairingRequest(
+                                  devices[index].ipAddress,
                                 );
-                              }
-                            },
-                            child: Container(
-                              margin: EdgeInsets.only(bottom: 8),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 2,
-                                    offset: Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.tv, color: Colors.black, size: 24),
-                                  SizedBox(width: 12),
-
-                                  Expanded(
-                                    child: Text(
-                                      device.deviceName,
-                                      style: TextStyle(fontSize: 16),
+                                if (socket != null) {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (_) => PairingDialog(
+                                          socket: socket,
+                                          service: service,
+                                          deviceModel: devices[index],
+                                        ),
+                                  );
+                                }
+                              },
+                              child: Container(
+                                margin: EdgeInsets.only(bottom: 8),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 2,
+                                      offset: Offset(0, 1),
                                     ),
-                                  ),
-
-                                  Icon(
-                                    Icons.arrow_forward_ios,
-                                    size: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.tv, color: Colors.black, size: 24),
+                                    SizedBox(width: 12),
+                        
+                                    Expanded(
+                                      child: Text(
+                                        device.deviceName,
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ),
+                        
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    } else {
-                      return Expanded(
-                        child: Column(
+                            );
+                          },
+                        );
+                      } else {
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [Center(child: Text("No devices found"))],
-                        ),
+                        );
+                      }
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text("An error occured! ${snapshot.error}"),
                       );
                     }
-                  }
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text("An error occured! ${snapshot.error}"),
-                    );
-                  }
-                  return Expanded(
-                    child: Column(
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [Center(child: CircularProgressIndicator())],
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ],
           ),
