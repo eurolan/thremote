@@ -372,6 +372,36 @@ class STBRemoteService {
     }
   }
 
+  Uint8List getCharMsg(String code, int keyCode, int meta) {
+    String cmd = 'msg-rc-kb-key-reqmsg-rc-kb-keyms';
+
+    String body =
+        '{"dev_id":"$devId","dev_descr":"$devDescr","kb_key_code":$keyCode,"meta":$meta,"ucode":$keyCode}';
+
+    return getMsg(cmd, body, code);
+  }
+
+  Future<void> sendText(String ipAddress, String code, String text) async {
+    try {
+      await connect(ipAddress);
+
+      // Send initial connect
+      _socket!.add(getReqConnectMsg());
+      await _socket!.flush();
+      final response1 = await _streamQueue!.next;
+      printReply(code, Uint8List.fromList(response1));
+      
+      int keyCode = text.codeUnitAt(0);
+      _socket!.add(getCharMsg(code, keyCode, 0));
+
+      await _socket!.flush();
+      print("$text character sent to STB.");
+    } catch (e) {
+      print("sendText error: $e");
+      disconnect();
+    }
+  }
+
   void disconnect() {
     _streamQueue?.cancel();
     _socket?.destroy();
