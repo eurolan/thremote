@@ -48,7 +48,7 @@ class PieDPad extends StatelessWidget {
               shape: const CircleBorder(),
               side: const BorderSide(
                 color: Color.fromRGBO(192, 24, 81, 1),
-                width: 2,
+                width: 3,
               ),
               elevation: 0, 
               padding: EdgeInsets.zero, 
