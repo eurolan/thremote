@@ -40,7 +40,7 @@ class VolumeControlPill extends StatelessWidget {
               child: const Column(
                 children: [
                   SizedBox(height: 16),
-                  Icon(CupertinoIcons.add, color: Colors.grey, size: 20),
+                  Icon(CupertinoIcons.add, color: Colors.black87, size: 20),
                 ],
               ),
             ),
@@ -75,7 +75,7 @@ class VolumeControlPill extends StatelessWidget {
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Icon(CupertinoIcons.minus, color: Colors.grey, size: 20),
+                  Icon(CupertinoIcons.minus, color: Colors.black87, size: 20),
                   SizedBox(height: 16),
                 ],
               ),

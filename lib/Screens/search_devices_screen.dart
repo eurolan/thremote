@@ -60,9 +60,10 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                             final device = devices[index];
                             return GestureDetector(
                               onTap: () async {
-                                Socket? socket = await service.sendPairingRequest(
-                                  devices[index].ipAddress,
-                                );
+                                Socket? socket = await service
+                                    .sendPairingRequest(
+                                      devices[index].ipAddress,
+                                    );
                                 if (socket != null) {
                                   showDialog(
                                     context: context,
@@ -94,16 +95,20 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.tv, color: Colors.black, size: 24),
+                                    Icon(
+                                      Icons.tv,
+                                      color: Colors.black,
+                                      size: 24,
+                                    ),
                                     SizedBox(width: 12),
-                        
+
                                     Expanded(
                                       child: Text(
-                                        device.deviceName,
+                                        getDisplayName(device.deviceName),
                                         style: TextStyle(fontSize: 16),
                                       ),
                                     ),
-                        
+
                                     Icon(
                                       Icons.arrow_forward_ios,
                                       size: 14,
@@ -141,5 +146,14 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
         ),
       ),
     );
+  }
+
+  String getDisplayName(String name) {
+    const keyword = 'TH300';
+    final index = name.indexOf(keyword);
+    if (index != -1) {
+      return name.substring(0, index + keyword.length).trim();
+    }
+    return name; // If TH300 not found, show full name
   }
 }

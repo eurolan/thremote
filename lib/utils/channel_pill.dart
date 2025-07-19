@@ -40,7 +40,11 @@ class ChannelControlPill extends StatelessWidget {
               child: const Column(
                 children: [
                   SizedBox(height: 16),
-                  Icon(CupertinoIcons.chevron_up, color: Colors.grey, size: 20),
+                  Icon(
+                    CupertinoIcons.chevron_up,
+                    color: Colors.black87,
+                    size: 20,
+                  ),
                 ],
               ),
             ),
@@ -78,7 +82,7 @@ class ChannelControlPill extends StatelessWidget {
                 children: [
                   Icon(
                     CupertinoIcons.chevron_down,
-                    color: Colors.grey,
+                    color: Colors.black87,
                     size: 20,
                   ),
                   SizedBox(height: 16),
