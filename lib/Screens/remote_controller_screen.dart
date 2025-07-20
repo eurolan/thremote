@@ -38,7 +38,8 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
   final FocusNode _focusNode = FocusNode();
   final TextEditingController _controller = TextEditingController();
-
+  bool _isKeyboardVisible = false;
+  
   Future<void> _sendCharacter(String value) async {
     if (value.isNotEmpty) {
       final char = value.substring(value.length - 1);
@@ -159,12 +160,20 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   Widget abcButton() {
     return ElevatedButton(
       onPressed: () {
-        _focusNode.unfocus(); // Force unfocus first
-        Future.delayed(Duration.zero, () {
-          // Ensure UI cycle completes
+        if (_isKeyboardVisible) {
+          _focusNode.unfocus();
+        } else {
           FocusScope.of(context).requestFocus(_focusNode);
-        });
+        }
+        _isKeyboardVisible = !_isKeyboardVisible;
       },
+      // onPressed: () {
+      //   _focusNode.unfocus(); // Force unfocus first
+      //   Future.delayed(Duration.zero, () {
+      //     // Ensure UI cycle completes
+      //     FocusScope.of(context).requestFocus(_focusNode);
+      //   });
+      // },
       style: ElevatedButton.styleFrom(
         shape: const CircleBorder(),
         backgroundColor: Colors.white,
