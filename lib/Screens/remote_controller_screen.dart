@@ -80,40 +80,47 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
   void showFunctionButtonsSheet(BuildContext context) {
     clearKeyboardFocus(context);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color.fromRGBO(243, 243, 243, 1),
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 8,
+              right: 8,
+              top: 12,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _functionButton('F1', Colors.red, 178),
-                  _functionButton('F2', Colors.green, 177),
-                  _functionButton('F3', Colors.yellow[700]!, 185),
-                  _functionButton('F4', Colors.blue, 186),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-            ],
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _functionButton('F1', Colors.red, 178),
+                    _functionButton('F2', Colors.green, 177),
+                    _functionButton('F3', Colors.yellow[700]!, 185),
+                    _functionButton('F4', Colors.blue, 186),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
         );
       },
