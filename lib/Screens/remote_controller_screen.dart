@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remote/models/device_model.dart';
@@ -422,7 +423,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                         _iconCircleButton(Icons.arrow_back, 143),
                         _homeButton(Icons.home, 141),
                         _iconCircleButton(Icons.info_outline, 157),
-                        _iconCircleButton(Icons.menu_rounded, 157),
+                        _iconCircleButton(Icons.menu_rounded, 138),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -431,7 +432,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _iconCircleButton(Icons.fast_rewind, 150),
-                        _iconCircleButton(Icons.play_arrow, 139),
+                        _iconCircleButton(CupertinoIcons.playpause_fill, 139),
                         _iconCircleButton(Icons.fast_forward, 144),
                       ],
                     ),
