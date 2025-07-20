@@ -1,7 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/channel_pill.dart';
+import 'package:remote/utils/display_name.dart';
 import 'package:remote/utils/pie_dpad_widget.dart';
 import 'package:remote/utils/stb_service.dart';
 import 'package:remote/utils/volume_pill.dart';
@@ -38,6 +40,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
   final FocusNode _focusNode = FocusNode();
   final TextEditingController _controller = TextEditingController();
+  bool _isKeyboardVisible = false;
 
   Future<void> _sendCharacter(String value) async {
     if (value.isNotEmpty) {
@@ -80,40 +83,47 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
   void showFunctionButtonsSheet(BuildContext context) {
     clearKeyboardFocus(context);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color.fromRGBO(243, 243, 243, 1),
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 8,
+              right: 8,
+              top: 12,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _functionButton('F1', Colors.red, 178),
-                  _functionButton('F2', Colors.green, 177),
-                  _functionButton('F3', Colors.yellow[700]!, 185),
-                  _functionButton('F4', Colors.blue, 186),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-            ],
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _functionButton('F1', Colors.red, 178),
+                    _functionButton('F2', Colors.green, 177),
+                    _functionButton('F3', Colors.yellow[700]!, 185),
+                    _functionButton('F4', Colors.blue, 186),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
         );
       },
@@ -152,12 +162,20 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   Widget abcButton() {
     return ElevatedButton(
       onPressed: () {
-        _focusNode.unfocus(); // Force unfocus first
-        Future.delayed(Duration.zero, () {
-          // Ensure UI cycle completes
+        if (_isKeyboardVisible) {
+          _focusNode.unfocus();
+        } else {
           FocusScope.of(context).requestFocus(_focusNode);
-        });
+        }
+        _isKeyboardVisible = !_isKeyboardVisible;
       },
+      // onPressed: () {
+      //   _focusNode.unfocus(); // Force unfocus first
+      //   Future.delayed(Duration.zero, () {
+      //     // Ensure UI cycle completes
+      //     FocusScope.of(context).requestFocus(_focusNode);
+      //   });
+      // },
       style: ElevatedButton.styleFrom(
         shape: const CircleBorder(),
         backgroundColor: Colors.white,
@@ -297,7 +315,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                       SizedBox(
                         width: 250,
                         child: Text(
-                          widget.deviceModel.deviceName,
+                          getDisplayName(widget.deviceModel.deviceName),
                           maxLines: 1,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
@@ -405,7 +423,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                         _iconCircleButton(Icons.arrow_back, 143),
                         _homeButton(Icons.home, 141),
                         _iconCircleButton(Icons.info_outline, 157),
-                        _iconCircleButton(Icons.menu_rounded, 157),
+                        _iconCircleButton(Icons.menu_rounded, 138),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -414,7 +432,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _iconCircleButton(Icons.fast_rewind, 150),
-                        _iconCircleButton(Icons.play_arrow, 139),
+                        _iconCircleButton(CupertinoIcons.playpause_fill, 139),
                         _iconCircleButton(Icons.fast_forward, 144),
                       ],
                     ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:remote/utils/display_name.dart';
 import 'package:remote/utils/pairing_dialog.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/stb_service.dart';
@@ -146,14 +147,5 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
         ),
       ),
     );
-  }
-
-  String getDisplayName(String name) {
-    const keyword = 'TH300';
-    final index = name.indexOf(keyword);
-    if (index != -1) {
-      return name.substring(0, index + keyword.length).trim();
-    }
-    return name; // If TH300 not found, show full name
   }
 }

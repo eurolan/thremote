@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:remote/screens/remote_controller_screen.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/pref/shared_pref.dart';
+import 'package:remote/utils/display_name.dart';
 import 'package:remote/utils/stb_service.dart';
 
 class PairingDialog extends StatefulWidget {
@@ -99,7 +100,7 @@ class _PairingDialogState extends State<PairingDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Pair with ${widget.deviceModel.deviceName}',
+              "Pair with ${getDisplayName(widget.deviceModel.deviceName)}",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 12),
