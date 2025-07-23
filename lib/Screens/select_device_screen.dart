@@ -193,7 +193,7 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                                   ),
                                   Text(
                                     textAlign: TextAlign.center,
-                                    "On your set-top box must be turn on the remote control option.",
+                                    "On your set-top box must be turn on the remote control option or in portal selection screen.",
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.black54,

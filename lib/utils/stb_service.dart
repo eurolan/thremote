@@ -390,8 +390,8 @@ class STBRemoteService {
       await _socket!.flush();
       final response1 = await _streamQueue!.next;
       printReply(code, Uint8List.fromList(response1));
-      
-      int keyCode = text.codeUnitAt(0);
+
+      int keyCode = text.runes.first;
       _socket!.add(getCharMsg(code, keyCode, 0));
 
       await _socket!.flush();
