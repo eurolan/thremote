@@ -3,7 +3,6 @@ import 'package:remote/screens/remote_controller_screen.dart';
 import 'package:remote/screens/search_devices_screen.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/pref/shared_pref.dart';
-import 'package:remote/utils/display_name.dart';
 
 class SelectDeviceScreen extends StatefulWidget {
   const SelectDeviceScreen({super.key});
@@ -85,7 +84,7 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                                     SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        getDisplayName(device.deviceName),
+                                        device.deviceName,
                                         style: TextStyle(fontSize: 16),
                                       ),
                                     ),
@@ -273,7 +272,7 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
           (context) => AlertDialog(
             title: Text('Delete Device'),
             content: Text(
-              'Are you sure you want to delete "${getDisplayName(device.deviceName)}"?',
+              'Are you sure you want to delete "${device.deviceName}"?',
             ),
             actions: [
               TextButton(
@@ -300,7 +299,7 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
 
   Future<bool> _renameDevice(BuildContext context, DeviceModel device) async {
     final TextEditingController controller = TextEditingController(
-      text: getDisplayName(device.deviceName),
+      text: device.deviceName,
     );
     bool renamed = false;
 
