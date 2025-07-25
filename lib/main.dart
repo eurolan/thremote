@@ -18,15 +18,5 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(title: 'Remote', home: SplashScreen());
-    // return MaterialApp(
-    //   title: 'Remote',
-    //   home: RemoteControlScreen(
-    //     deviceModel: DeviceModel(
-    //       deviceName: "fareed",
-    //       ipAddress: "182.212.12",
-    //       pairingCode: "232323",
-    //     ),
-    //   ),
-    // );
   }
 }

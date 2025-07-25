@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/channel_pill.dart';
-import 'package:remote/utils/display_name.dart';
 import 'package:remote/utils/pie_dpad_widget.dart';
 import 'package:remote/utils/stb_service.dart';
 import 'package:remote/utils/volume_pill.dart';
@@ -315,7 +314,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                       SizedBox(
                         width: 250,
                         child: Text(
-                          getDisplayName(widget.deviceModel.deviceName),
+                          widget.deviceModel.deviceName,
                           maxLines: 1,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,

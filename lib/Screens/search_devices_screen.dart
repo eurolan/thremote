@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:remote/utils/display_name.dart';
 import 'package:remote/utils/pairing_dialog.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/stb_service.dart';
@@ -105,7 +104,7 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
 
                                     Expanded(
                                       child: Text(
-                                        getDisplayName(device.deviceName),
+                                        device.deviceName,
                                         style: TextStyle(fontSize: 16),
                                       ),
                                     ),
