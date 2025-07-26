@@ -286,27 +286,28 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
       backgroundColor: const Color.fromRGBO(243, 243, 243, 1),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-            child: Column(
-              children: [
-                // Hidden TextField
-                Opacity(
-                  opacity: 0.0,
-                  child: SizedBox(
-                    height: 2,
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      autofocus: false,
-                      onChanged: (value) async {
-                        await _sendCharacter(value);
-                        _controller.clear();
-                      },
-                    ),
+          child: Column(
+            children: [
+              SizedBox(height: 24),
+              // Hidden TextField
+              Opacity(
+                opacity: 0.0,
+                child: SizedBox(
+                  height: 2,
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    autofocus: false,
+                    onChanged: (value) async {
+                      await _sendCharacter(value);
+                      _controller.clear();
+                    },
                   ),
                 ),
-                SizedBox(
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SizedBox(
                   width: double.infinity,
                   child: Stack(
                     alignment: Alignment.center,
@@ -342,53 +343,56 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                     ],
                   ),
                 ),
-                SizedBox(height: 24),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+              ),
+              SizedBox(height: 24),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildButton(1),
+                      _buildButton(2),
+                      _buildButton(3),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildButton(4),
+                      _buildButton(5),
+                      _buildButton(6),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildButton(7),
+                      _buildButton(8),
+                      _buildButton(9),
+                    ],
+                  ),
+                  SizedBox(
+                    width: 250,
+                    height: 90,
+                    child: Stack(
+                      alignment: Alignment.topCenter,
                       children: [
-                        _buildButton(1),
-                        _buildButton(2),
-                        _buildButton(3),
+                        Positioned(
+                          // top: 20,
+                          child: _buildButton(0),
+                        ),
+                        Positioned(left: 0, top: 20, child: fourDotsButton()),
+                        Positioned(right: 0, top: 20, child: abcButton()),
                       ],
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildButton(4),
-                        _buildButton(5),
-                        _buildButton(6),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildButton(7),
-                        _buildButton(8),
-                        _buildButton(9),
-                      ],
-                    ),
-                    SizedBox(
-                      width: 250,
-                      height: 90,
-                      child: Stack(
-                        alignment: Alignment.topCenter,
-                        children: [
-                          Positioned(
-                            // top: 20,
-                            child: _buildButton(0),
-                          ),
-                          Positioned(left: 0, top: 20, child: fourDotsButton()),
-                          Positioned(right: 0, top: 20, child: abcButton()),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -409,36 +413,36 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 24),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Home, Back, Info, Mute
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _iconCircleButton(Icons.volume_off, 176),
-                        _iconCircleButton(Icons.arrow_back, 143),
-                        _homeButton(Icons.home, 141),
-                        _iconCircleButton(Icons.info_outline, 157),
-                        _iconCircleButton(Icons.menu_rounded, 138),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    // Rewind, Play/Pause, Fast Forward
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _iconCircleButton(Icons.fast_rewind, 150),
-                        _iconCircleButton(CupertinoIcons.playpause_fill, 139),
-                        _iconCircleButton(Icons.fast_forward, 144),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              SizedBox(height: 24),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Home, Back, Info, Mute
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _iconCircleButton(Icons.volume_off, 176),
+                      _iconCircleButton(Icons.arrow_back, 143),
+                      _homeButton(Icons.home, 141),
+                      _iconCircleButton(Icons.info_outline, 157),
+                      _iconCircleButton(Icons.menu_rounded, 138),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Rewind, Play/Pause, Fast Forward
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _iconCircleButton(Icons.fast_rewind, 150),
+                      _iconCircleButton(CupertinoIcons.playpause_fill, 139),
+                      _iconCircleButton(Icons.fast_forward, 144),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
