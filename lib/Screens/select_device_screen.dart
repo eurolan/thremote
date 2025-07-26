@@ -149,7 +149,7 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                         return Column(
                           children: [
                             SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.4,
+                              height: MediaQuery.of(context).size.height * 0.35,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -169,56 +169,52 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                                 ],
                               ),
                             ),
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.35,
-                              child: Column(
-                                // mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "No Connected Devices",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                            Column(
+                              children: [
+                                Text(
+                                  "No Connected Devices",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    textAlign: TextAlign.center,
-                                    "Your set-top box and mobile device should be connected to the same wifi network.",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black54,
-                                    ),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  textAlign: TextAlign.center,
+                                  "Your set-top box and mobile device should be connected to the same wifi network.",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
                                   ),
-                                  Text(
-                                    textAlign: TextAlign.center,
-                                    "On your set-top box must be turn on the remote control option or in portal selection screen.",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black54,
-                                    ),
+                                ),
+                                Text(
+                                  textAlign: TextAlign.center,
+                                  "On your set-top box must be turn on the remote control option or in portal selection screen.",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
                                   ),
-
-                                  SizedBox(height: 16),
-                                  Text(
-                                    textAlign: TextAlign.center,
-                                    "(Settings > System settings > Remote control)",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black54,
-                                    ),
+                                ),
+                            
+                                SizedBox(height: 16),
+                                Text(
+                                  textAlign: TextAlign.center,
+                                  "(Settings > System settings > Remote control)",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
                                   ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    textAlign: TextAlign.center,
-                                    "If we cannot find your set-top box, please ensure that your set-top box is running the lastest operating system update.",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black54,
-                                    ),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  textAlign: TextAlign.center,
+                                  "If we cannot find your set-top box, please ensure that your set-top box is running the lastest operating system update.",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
                         );
