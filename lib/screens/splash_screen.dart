@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:remote/pref/shared_pref.dart';
 import 'package:remote/screens/select_device_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,14 +15,28 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeAndNavigate();
+  }
 
-    // Delay and navigate to home screen
-    Timer(const Duration(seconds: 2), () {
+  Future<void> _initializeAndNavigate() async {
+    // Show logo immediately, then do background initialization
+    
+    // Start device discovery in background
+    final Future<void> deviceDiscovery = SharedPrefrencesHelper().updateStoredDevicesFromDiscovery();
+    
+    // Ensure minimum display time of 1.5 seconds for branding
+    final Future<void> minimumDelay = Future.delayed(const Duration(milliseconds: 1500));
+    
+    // Wait for both to complete
+    await Future.wait([deviceDiscovery, minimumDelay]);
+    
+    // Navigate to next screen
+    if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => SelectDeviceScreen()),
       );
-    });
+    }
   }
 
   @override
