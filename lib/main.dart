@@ -8,7 +8,6 @@ import 'package:remote/screens/splash_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPrefrencesHelper.init();
-  await SharedPrefrencesHelper().updateStoredDevicesFromDiscovery();
   runApp(const MyApp());
 }
 
