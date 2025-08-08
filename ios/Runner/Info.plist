@@ -51,5 +51,6 @@
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app uses the local network to discover and control devices.</string>
+
 </dict>
 </plist>

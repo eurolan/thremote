@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_nsd/flutter_nsd.dart';
 import 'package:multicast_dns/multicast_dns.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:pointycastle/export.dart';
@@ -446,5 +447,101 @@ class STBRemoteService {
 
     client.stop();
     return foundDevices;
+  }
+
+  Future<List<DeviceModel>> discoverStbsByNsd() async {
+    final List<DeviceModel> foundDevices = [];
+    final flutterNsd = FlutterNsd();
+
+    try {
+      // Start discovery for the specific service type
+      final Stream<NsdServiceInfo> discoveryStream = flutterNsd.stream;
+
+      // Start the discovery process
+      await flutterNsd.discoverServices('_infomir_mobile_rc_service._tcp');
+
+      // Create a completer to handle the async discovery process
+      final completer = Completer<List<DeviceModel>>();
+      late StreamSubscription<NsdServiceInfo> subscription;
+
+      // Set up a timer to stop discovery after a reasonable time
+      final timeout = Timer(Duration(seconds: 5), () {
+        flutterNsd.stopDiscovery();
+        subscription.cancel();
+        if (!completer.isCompleted) {
+          completer.complete(foundDevices);
+        }
+      });
+
+      subscription = discoveryStream.listen(
+        (serviceInfo) {
+          // Get the IP address from hostAddresses or fallback to hostname
+          String ipAddress = '';
+          if (serviceInfo.hostAddresses != null &&
+              serviceInfo.hostAddresses!.isNotEmpty) {
+            // Prefer IPv4 addresses if available
+            final ipv4Addresses =
+                serviceInfo.hostAddresses!
+                    .where((addr) => addr.contains('.'))
+                    .toList();
+            if (ipv4Addresses.isNotEmpty) {
+              ipAddress = ipv4Addresses.first;
+            } else {
+              ipAddress = serviceInfo.hostAddresses!.first;
+            }
+          } else if (serviceInfo.hostname != null) {
+            ipAddress = serviceInfo.hostname!;
+          }
+
+          debugPrint(
+            '✅ Found STB: ${serviceInfo.name} at $ipAddress:${serviceInfo.port}',
+          );
+
+          foundDevices.add(
+            DeviceModel(
+              mdnsName: serviceInfo.name ?? 'Unknown Device',
+              deviceName: getDisplayName(serviceInfo.name ?? 'Unknown Device'),
+              ipAddress: ipAddress,
+              pairingCode: null,
+            ),
+          );
+        },
+        onError: (error) {
+          if (error is NsdError) {
+            debugPrint('❌ NSD Discovery error: ${error.errorCode}');
+            // Only complete on critical errors, not on normal discovery stopped
+            if (error.errorCode != NsdErrorCode.discoveryStopped) {
+              timeout.cancel();
+              subscription.cancel();
+              flutterNsd.stopDiscovery();
+              if (!completer.isCompleted) {
+                completer.complete(foundDevices);
+              }
+            }
+          } else {
+            debugPrint('❌ Unexpected error: $error');
+            timeout.cancel();
+            subscription.cancel();
+            flutterNsd.stopDiscovery();
+            if (!completer.isCompleted) {
+              completer.complete(foundDevices);
+            }
+          }
+        },
+        onDone: () {
+          timeout.cancel();
+          flutterNsd.stopDiscovery();
+          if (!completer.isCompleted) {
+            completer.complete(foundDevices);
+          }
+        },
+      );
+
+      return await completer.future;
+    } catch (e) {
+      debugPrint('❌ Error during STB discovery: $e');
+      await flutterNsd.stopDiscovery();
+      return foundDevices;
+    }
   }
 }
