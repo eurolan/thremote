@@ -44,7 +44,13 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
               SizedBox(height: 20),
               Expanded(
                 child: FutureBuilder(
-                  future: service.discoverStbsByMdns(),
+                  // future: service.discoverStbsByMdns(),
+                  future:
+                      Platform.isAndroid
+                          ? service.discoverStbsByMdns()
+                          : Platform.isIOS
+                          ? service.discoverStbsByNsd()
+                          : Future.error("Unsupported platform"),
                   builder: (
                     BuildContext context,
                     AsyncSnapshot<dynamic> snapshot,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/stb_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -99,8 +100,17 @@ class SharedPrefrencesHelper {
 
   Future<void> updateStoredDevicesFromDiscovery() async {
     final service = STBRemoteService();
+    // final List<DeviceModel> discoveredDevices =
+    //     await service.discoverStbsByMdns();
     final List<DeviceModel> discoveredDevices =
-        await service.discoverStbsByMdns();
+        Platform.isAndroid
+            ? await service.discoverStbsByMdns()
+            : Platform.isIOS
+            ? await service.discoverStbsByNsd()
+            : throw UnsupportedError(
+              "Unsupported platform for device discovery",
+            );
+
     final List<DeviceModel> storedDevices = await loadConnectedDevices();
 
     final List<DeviceModel> updatedDevices =
