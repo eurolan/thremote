@@ -412,6 +412,20 @@ class STBRemoteService {
   }
 
   Future<List<DeviceModel>> discoverStbsByMdns() async {
+    // return [
+    //   DeviceModel(
+    //     mdnsName: "first stb",
+    //     deviceName: getDisplayName("first stb"),
+    //     ipAddress: "193.824.44",
+    //     pairingCode: "283838",
+    //   ),
+    //   DeviceModel(
+    //     mdnsName: "second stb",
+    //     deviceName: getDisplayName("second stb"),
+    //     ipAddress: "190.453.33",
+    //     pairingCode: "283838",
+    //   ),
+    // ];
     final List<DeviceModel> foundDevices = [];
     final MDnsClient client = MDnsClient();
 
