@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:remote/pref/shared_pref.dart';
 import 'package:remote/utils/pairing_dialog.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/stb_service.dart';
@@ -44,19 +45,34 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
               SizedBox(height: 20),
               Expanded(
                 child: FutureBuilder(
-                  // future: service.discoverStbsByMdns(),
-                  future:
-                      Platform.isAndroid
-                          ? service.discoverStbsByMdns()
-                          : Platform.isIOS
-                          ? service.discoverStbsByNsd()
-                          : Future.error("Unsupported platform"),
+                  future: Future.wait([
+                    Platform.isAndroid
+                        ? service.discoverStbsByMdns()
+                        : Platform.isIOS
+                        ? service.discoverStbsByNsd()
+                        : Future.error("Unsupported platform"),
+                    SharedPrefrencesHelper().loadConnectedDevices(),
+                  ]),
+
                   builder: (
                     BuildContext context,
                     AsyncSnapshot<dynamic> snapshot,
                   ) {
                     if (snapshot.hasData) {
-                      devices = snapshot.data;
+                      // devices = snapshot.data;
+
+                      final discoveredDevices =
+                          snapshot.data![0] as List<DeviceModel>;
+                      final connectedDevices =
+                          snapshot.data![1] as List<DeviceModel>;
+
+                      final connectedIps =
+                          connectedDevices.map((d) => d.ipAddress).toSet();
+
+                      final devices =
+                          discoveredDevices
+                              .where((d) => !connectedIps.contains(d.ipAddress))
+                              .toList();
 
                       if (devices.isNotEmpty) {
                         return ListView.builder(
@@ -65,6 +81,17 @@ class _SearchDevicesScreenState extends State<SearchDevicesScreen> {
                           itemBuilder: (context, index) {
                             final device = devices[index];
                             return GestureDetector(
+                              // onTap: () async {
+                              //   await SharedPrefrencesHelper()
+                              //       .addConnectedDevice(
+                              //         DeviceModel(
+                              //           mdnsName: device.mdnsName,
+                              //           deviceName: device.deviceName,
+                              //           ipAddress: device.ipAddress,
+                              //           pairingCode: device.pairingCode,
+                              //         ),
+                              //       );
+                              // },
                               onTap: () async {
                                 Socket? socket = await service
                                     .sendPairingRequest(

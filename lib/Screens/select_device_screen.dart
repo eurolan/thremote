@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:remote/screens/remote_controller_screen.dart';
 import 'package:remote/screens/search_devices_screen.dart';
@@ -46,16 +48,29 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                           itemBuilder: (context, index) {
                             final device = connectedDevices[index];
                             return GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => RemoteControlScreen(
-                                          deviceModel: connectedDevices[index],
-                                        ),
-                                  ),
-                                );
+                              onTap: () async {
+                                final device = connectedDevices[index];
+
+                                final ok = await canConnect(device.ipAddress);
+                                if (ok) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => RemoteControlScreen(
+                                            deviceModel: device,
+                                          ),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "STB not reachable: ${device.deviceName}",
+                                      ),
+                                    ),
+                                  );
+                                }
                               },
                               child: Container(
                                 margin: EdgeInsets.only(bottom: 8),
@@ -195,7 +210,7 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
                                     color: Colors.black54,
                                   ),
                                 ),
-                            
+
                                 SizedBox(height: 16),
                                 Text(
                                   textAlign: TextAlign.center,
@@ -333,6 +348,20 @@ class _SelectDeviceScreenState extends State<SelectDeviceScreen> {
     );
 
     return renamed;
+  }
+
+  Future<bool> canConnect(String ip) async {
+    try {
+      final socket = await Socket.connect(
+        ip,
+        40611,
+        timeout: const Duration(seconds: 2),
+      );
+      await socket.close();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
