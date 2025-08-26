@@ -20,6 +20,7 @@ class RemoteControlScreen extends StatefulWidget {
 
 class _RemoteControlScreenState extends State<RemoteControlScreen> {
   final remote = STBRemoteService();
+  Timer? repeatTimer;
 
   Future<void> sendSTBKey(int code) async {
     HapticFeedback.mediumImpact();
@@ -75,9 +76,10 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
-          splashColor: Colors.grey.withOpacity(0.3),
-          onTap: () {
-            sendSTBKey(128 + number);
+          splashColor: Colors.deepPurple.withOpacity(0.1),
+
+          onTap: () async {
+            await sendSTBKey(128 + number);
           },
           onTapDown: (_) {
             startSending();
@@ -476,7 +478,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _iconCircleButton(
+                      _iconCircleButton2(
                         Icons.fast_rewind,
                         150,
                         smallButtonSize,
@@ -486,7 +488,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                         139,
                         smallButtonSize,
                       ),
-                      _iconCircleButton(
+                      _iconCircleButton2(
                         Icons.fast_forward,
                         144,
                         smallButtonSize,
@@ -497,6 +499,42 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _iconCircleButton2(IconData icon, int rcCode, double size) {
+    return Container(
+      margin: const EdgeInsets.all(4),
+      width: size,
+      height: size,
+      child: GestureDetector(
+        onTapDown: (_) {
+          repeatTimer = Timer.periodic(
+            const Duration(milliseconds: 300),
+            (_) => sendSTBKey(rcCode),
+          );
+        },
+        onTapUp: (_) {
+          repeatTimer?.cancel();
+          repeatTimer = null;
+        },
+        onTapCancel: () {
+          repeatTimer?.cancel();
+          repeatTimer = null;
+        },
+        child: ElevatedButton(
+          onPressed: () async {
+            await sendSTBKey(rcCode);
+          },
+          style: ElevatedButton.styleFrom(
+            shape: const CircleBorder(),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            padding: EdgeInsets.zero,
+          ),
+          child: Icon(icon, color: Colors.black87, size: size * 0.4),
         ),
       ),
     );

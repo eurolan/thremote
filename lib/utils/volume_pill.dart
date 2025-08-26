@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +20,8 @@ class VolumeControlPill extends StatelessWidget {
     final iconSize = pillWidth * 0.4;
     final fontSize = pillWidth * 0.32;
 
+    Timer? repeatTimer;
+
     return Container(
       width: pillWidth,
       height: pillHeight,
@@ -36,34 +40,53 @@ class VolumeControlPill extends StatelessWidget {
         children: [
           // Top half (vol+)
           Expanded(
-            child: ElevatedButton(
-              onPressed: () async => await onClick(146),
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(borderRadius),
-                  ),
-                ),
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: EdgeInsets.zero,
-                elevation: 0,
-              ),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(top: pillHeight * 0.07),
-                    child: Icon(
-                      CupertinoIcons.add,
-                      color: Colors.black87,
-                      size: iconSize,
+            child: GestureDetector(
+              onTapDown: (_) {
+                repeatTimer = Timer.periodic(
+                  const Duration(milliseconds: 300),
+                  (_) => onClick(146),
+                  // (_) =>   print("click"),
+                );
+              },
+              onTapUp: (_) {
+                repeatTimer?.cancel();
+                repeatTimer = null;
+              },
+              onTapCancel: () {
+                repeatTimer?.cancel();
+                repeatTimer = null;
+              },
+              child: ElevatedButton(
+                onPressed: () async {
+                  await onClick(146);
+                  // print("object");
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(borderRadius),
                     ),
                   ),
-                ],
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: EdgeInsets.zero,
+                  elevation: 0,
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(top: pillHeight * 0.07),
+                      child: Icon(
+                        CupertinoIcons.add,
+                        color: Colors.black87,
+                        size: iconSize,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-
           // Middle label (not clickable)
           Center(
             child: Text(
@@ -78,31 +101,49 @@ class VolumeControlPill extends StatelessWidget {
 
           // Bottom half (vol-)
           Expanded(
-            child: ElevatedButton(
-              onPressed: () async => await onClick(147),
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(borderRadius),
-                  ),
-                ),
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: EdgeInsets.zero,
-                elevation: 0,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(bottom: pillHeight * 0.07),
-                    child: Icon(
-                      CupertinoIcons.minus,
-                      color: Colors.black87,
-                      size: iconSize,
+            child: GestureDetector(
+              onTapDown: (_) {
+                repeatTimer = Timer.periodic(
+                  const Duration(milliseconds: 300),
+                  (_) => onClick(147),
+                );
+              },
+              onTapUp: (_) {
+                repeatTimer?.cancel();
+                repeatTimer = null;
+              },
+              onTapCancel: () {
+                repeatTimer?.cancel();
+                repeatTimer = null;
+              },
+              child: ElevatedButton(
+                onPressed: () async {
+                  await onClick(147);
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(borderRadius),
                     ),
                   ),
-                ],
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: EdgeInsets.zero,
+                  elevation: 0,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(bottom: pillHeight * 0.07),
+                      child: Icon(
+                        CupertinoIcons.minus,
+                        color: Colors.black87,
+                        size: iconSize,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

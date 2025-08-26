@@ -1,11 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'dart:math';
 
-class PieDPad extends StatelessWidget {
+class PieDPad extends StatefulWidget {
   final Future<void> Function(int) onClick;
 
   const PieDPad({super.key, required this.onClick});
 
+  @override
+  State<PieDPad> createState() => _PieDPadState();
+}
+
+class _PieDPadState extends State<PieDPad> {
+  Timer? repeatTimer;
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -46,24 +54,42 @@ class PieDPad extends StatelessWidget {
           _buildTriangle(Direction.up, 189, dpadSize, iconSize),
 
           // Center OK button
-          ElevatedButton(
-            onPressed: () async => await onClick(172),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: const CircleBorder(),
-              side: const BorderSide(
-                color: Color.fromRGBO(192, 24, 81, 1),
-                width: 3,
+          GestureDetector(
+            onTapDown: (_) {
+              repeatTimer = Timer.periodic(
+                const Duration(milliseconds: 300),
+                (_) => widget.onClick(172),
+              );
+            },
+            onTapUp: (_) {
+              repeatTimer?.cancel();
+              repeatTimer = null;
+            },
+            onTapCancel: () {
+              repeatTimer?.cancel();
+              repeatTimer = null;
+            },
+            child: ElevatedButton(
+              onPressed: () async {
+                await widget.onClick(172);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                shape: const CircleBorder(),
+                side: const BorderSide(
+                  color: Color.fromRGBO(192, 24, 81, 1),
+                  width: 3,
+                ),
+                elevation: 0,
+                padding: EdgeInsets.zero,
+                fixedSize: Size(okButtonSize, okButtonSize),
               ),
-              elevation: 0,
-              padding: EdgeInsets.zero,
-              fixedSize: Size(okButtonSize, okButtonSize),
-            ),
-            child: Text(
-              "OK",
-              style: TextStyle(
-                fontSize: okButtonSize * 0.25,
-                color: Colors.black54,
+              child: Text(
+                "OK",
+                style: TextStyle(
+                  fontSize: okButtonSize * 0.25,
+                  color: Colors.black54,
+                ),
               ),
             ),
           ),
@@ -83,21 +109,39 @@ class PieDPad extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            padding: EdgeInsets.zero,
-            alignment: _alignment(direction),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.zero,
+        child: GestureDetector(
+          onTapDown: (_) {
+            repeatTimer = Timer.periodic(
+              const Duration(milliseconds: 300),
+              (_) => widget.onClick(code),
+            );
+          },
+          onTapUp: (_) {
+            repeatTimer?.cancel();
+            repeatTimer = null;
+          },
+          onTapCancel: () {
+            repeatTimer?.cancel();
+            repeatTimer = null;
+          },
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: EdgeInsets.zero,
+              alignment: _alignment(direction),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.zero,
+              ),
             ),
-          ),
-          onPressed: () async => await onClick(code),
-          child: Icon(
-            _iconData(direction),
-            color: Colors.black,
-            size: iconSize,
+            onPressed: () async {
+              await widget.onClick(code);
+            },
+            child: Icon(
+              _iconData(direction),
+              color: Colors.black,
+              size: iconSize,
+            ),
           ),
         ),
       ),
