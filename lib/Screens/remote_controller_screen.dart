@@ -7,7 +7,6 @@ import 'package:remote/utils/pie_dpad_widget.dart';
 import 'package:remote/utils/stb_service.dart';
 import 'package:remote/utils/volume_pill.dart';
 
-
 class RemoteControlScreen extends StatefulWidget {
   final DeviceModel deviceModel;
 
@@ -163,6 +162,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   Widget abcButton(double size) {
     return ElevatedButton(
       onPressed: () {
+        HapticFeedback.mediumImpact();
         if (_isKeyboardVisible) {
           _focusNode.unfocus();
         } else {
@@ -190,6 +190,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   Widget fourDotsButton(double size, double dotSize) {
     return ElevatedButton(
       onPressed: () {
+        HapticFeedback.mediumImpact();
         showFunctionButtonsSheet(context, size * 0.3);
       },
       style: ElevatedButton.styleFrom(
