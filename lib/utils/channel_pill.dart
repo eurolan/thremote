@@ -8,12 +8,22 @@ class ChannelControlPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Scale sizes relative to screen
+    final pillWidth = screenWidth * 0.12; 
+    final pillHeight = screenHeight * 0.25; 
+    final borderRadius = pillWidth * 0.6; 
+    final iconSize = pillWidth * 0.4; 
+    final fontSize = pillWidth * 0.32; 
+
     return Container(
-      width: 50,
-      height: 230,
+      width: pillWidth,
+      height: pillHeight,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -29,21 +39,25 @@ class ChannelControlPill extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () async => await onClick(188),
               style: ElevatedButton.styleFrom(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(borderRadius),
+                  ),
                 ),
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
                 padding: EdgeInsets.zero,
                 elevation: 0,
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  SizedBox(height: 16),
-                  Icon(
-                    CupertinoIcons.chevron_up,
-                    color: Colors.black87,
-                    size: 20,
+                  Padding(
+                    padding: EdgeInsets.only(top: pillHeight * 0.07),
+                    child: Icon(
+                      CupertinoIcons.chevron_up,
+                      color: Colors.black87,
+                      size: iconSize,
+                    ),
                   ),
                 ],
               ),
@@ -55,7 +69,7 @@ class ChannelControlPill extends StatelessWidget {
             child: Text(
               "CH",
               style: TextStyle(
-                fontSize: 16,
+                fontSize: fontSize,
                 color: Colors.grey,
                 fontWeight: FontWeight.w500,
               ),
@@ -67,9 +81,9 @@ class ChannelControlPill extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () async => await onClick(145),
               style: ElevatedButton.styleFrom(
-                shape: const RoundedRectangleBorder(
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(30),
+                    bottom: Radius.circular(borderRadius),
                   ),
                 ),
                 backgroundColor: Colors.transparent,
@@ -77,15 +91,17 @@ class ChannelControlPill extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 elevation: 0,
               ),
-              child: const Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Icon(
-                    CupertinoIcons.chevron_down,
-                    color: Colors.black87,
-                    size: 20,
+                  Padding(
+                    padding: EdgeInsets.only(bottom: pillHeight * 0.07),
+                    child: Icon(
+                      CupertinoIcons.chevron_down,
+                      color: Colors.black87,
+                      size: iconSize,
+                    ),
                   ),
-                  SizedBox(height: 16),
                 ],
               ),
             ),

@@ -7,6 +7,7 @@ import 'package:remote/utils/pie_dpad_widget.dart';
 import 'package:remote/utils/stb_service.dart';
 import 'package:remote/utils/volume_pill.dart';
 
+
 class RemoteControlScreen extends StatefulWidget {
   final DeviceModel deviceModel;
 
@@ -49,11 +50,11 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     }
   }
 
-  Widget _buildButton(int number) {
+  Widget _buildButton(int number, double size) {
     return Container(
-      margin: const EdgeInsets.all(8),
-      width: 48,
-      height: 48,
+      margin: EdgeInsets.all(size * 0.15),
+      width: size,
+      height: size,
       child: ElevatedButton(
         onPressed: () async {
           await sendSTBKey(128 + number);
@@ -66,11 +67,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
         ),
         child: Text(
           number.toString(),
-          style: const TextStyle(
-            fontSize: 20,
-            color: Colors.black54,
-            // fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: size * 0.4, color: Colors.black54),
         ),
       ),
     );
@@ -80,7 +77,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     FocusScope.of(context).requestFocus(FocusNode());
   }
 
-  void showFunctionButtonsSheet(BuildContext context) {
+  void showFunctionButtonsSheet(BuildContext context, double fontSize) {
     clearKeyboardFocus(context);
 
     showModalBottomSheet(
@@ -114,10 +111,10 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _functionButton('F1', Colors.red, 178),
-                    _functionButton('F2', Colors.green, 177),
-                    _functionButton('F3', Colors.yellow[700]!, 185),
-                    _functionButton('F4', Colors.blue, 186),
+                    _functionButton('F1', Colors.red, 178, fontSize),
+                    _functionButton('F2', Colors.green, 177, fontSize),
+                    _functionButton('F3', Colors.yellow[700]!, 185, fontSize),
+                    _functionButton('F4', Colors.blue, 186, fontSize),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -131,7 +128,12 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     });
   }
 
-  Widget _functionButton(String label, Color textColor, int rcCode) {
+  Widget _functionButton(
+    String label,
+    Color textColor,
+    int rcCode,
+    double fontSize,
+  ) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -150,7 +152,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
             style: TextStyle(
               color: textColor,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: fontSize,
             ),
           ),
         ),
@@ -158,7 +160,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     );
   }
 
-  Widget abcButton() {
+  Widget abcButton(double size) {
     return ElevatedButton(
       onPressed: () {
         if (_isKeyboardVisible) {
@@ -168,23 +170,16 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
         }
         _isKeyboardVisible = !_isKeyboardVisible;
       },
-      // onPressed: () {
-      //   _focusNode.unfocus(); // Force unfocus first
-      //   Future.delayed(Duration.zero, () {
-      //     // Ensure UI cycle completes
-      //     FocusScope.of(context).requestFocus(_focusNode);
-      //   });
-      // },
       style: ElevatedButton.styleFrom(
         shape: const CircleBorder(),
         backgroundColor: Colors.white,
         elevation: 0,
-        minimumSize: const Size(60, 60),
+        minimumSize: Size(size, size),
       ),
-      child: const Text(
+      child: Text(
         "ABC",
         style: TextStyle(
-          fontSize: 18,
+          fontSize: size * 0.3,
           color: Colors.black,
           fontWeight: FontWeight.w400,
         ),
@@ -192,16 +187,16 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     );
   }
 
-  Widget fourDotsButton() {
+  Widget fourDotsButton(double size, double dotSize) {
     return ElevatedButton(
       onPressed: () {
-        showFunctionButtonsSheet(context);
+        showFunctionButtonsSheet(context, size * 0.3);
       },
       style: ElevatedButton.styleFrom(
         shape: const CircleBorder(),
         backgroundColor: Colors.white,
         elevation: 0,
-        minimumSize: const Size(60, 60),
+        minimumSize: Size(size, size),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -209,18 +204,18 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDot(Colors.orange),
+              _buildDot(Colors.orange, dotSize),
               const SizedBox(width: 1),
-              _buildDot(Colors.red),
+              _buildDot(Colors.red, dotSize),
             ],
           ),
           const SizedBox(height: 1),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDot(Colors.green),
+              _buildDot(Colors.green, dotSize),
               const SizedBox(width: 1),
-              _buildDot(Colors.blue),
+              _buildDot(Colors.blue, dotSize),
             ],
           ),
         ],
@@ -228,20 +223,20 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
     );
   }
 
-  Widget _buildDot(Color color) {
+  Widget _buildDot(Color color, double size) {
     return Container(
-      margin: EdgeInsets.all(1),
-      width: 9,
-      height: 9,
+      margin: const EdgeInsets.all(1),
+      width: size,
+      height: size,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 
-  Widget _iconCircleButton(IconData icon, int rcCode) {
+  Widget _iconCircleButton(IconData icon, int rcCode, double size) {
     return Container(
       margin: const EdgeInsets.all(4),
-      width: 60,
-      height: 60,
+      width: size,
+      height: size,
       child: ElevatedButton(
         onPressed: () async => await sendSTBKey(rcCode),
         style: ElevatedButton.styleFrom(
@@ -250,16 +245,16 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
           elevation: 0,
           padding: EdgeInsets.zero,
         ),
-        child: Icon(icon, color: Colors.black87, size: 24),
+        child: Icon(icon, color: Colors.black87, size: size * 0.4),
       ),
     );
   }
 
-  Widget _homeButton(IconData icon, int rcCode) {
+  Widget _homeButton(IconData icon, int rcCode, double size) {
     return Container(
       margin: const EdgeInsets.all(4),
-      width: 80,
-      height: 80,
+      width: size,
+      height: size,
       child: ElevatedButton(
         onPressed: () async => await sendSTBKey(rcCode),
         style: ElevatedButton.styleFrom(
@@ -268,7 +263,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
           elevation: 0,
           padding: EdgeInsets.zero,
         ),
-        child: Icon(icon, color: Colors.black87, size: 24),
+        child: Icon(icon, color: Colors.black87, size: size * 0.35),
       ),
     );
   }
@@ -281,6 +276,14 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    final buttonSize = screenWidth * 0.12; // number pad buttons
+    final smallButtonSize = screenWidth * 0.14; // icon buttons
+    final bigButtonSize = screenWidth * 0.2; // home button
+    final dotSize = screenWidth * 0.02;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: const Color.fromRGBO(243, 243, 243, 1),
@@ -288,8 +291,9 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              SizedBox(height: 24),
-              // Hidden TextField
+              SizedBox(height: screenHeight * 0.015),
+
+              /// Hidden TextField
               Opacity(
                 opacity: 0.0,
                 child: SizedBox(
@@ -305,38 +309,38 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                   ),
                 ),
               ),
+
+              /// Title + Power button
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.07),
                 child: SizedBox(
                   width: double.infinity,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       SizedBox(
-                        width: 250,
+                        width: screenWidth * 0.7,
                         child: Text(
                           widget.deviceModel.deviceName,
                           maxLines: 1,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: screenWidth * 0.05,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
-
                       Positioned(
                         left: 0,
                         child: InkWell(
                           onTap: () async {
                             await sendSTBKey(140);
                           },
-
                           child: Icon(
-                            size: 28,
+                            size: screenWidth * 0.07,
                             Icons.power_settings_new,
-                            color: Color.fromRGBO(192, 24, 81, 1),
+                            color: const Color.fromRGBO(192, 24, 81, 1),
                           ),
                         ),
                       ),
@@ -344,100 +348,121 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: screenHeight * 0.02),
+
+              /// Number pad
               Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildButton(1),
-                      _buildButton(2),
-                      _buildButton(3),
+                      _buildButton(1, buttonSize),
+                      _buildButton(2, buttonSize),
+                      _buildButton(3, buttonSize),
                     ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildButton(4),
-                      _buildButton(5),
-                      _buildButton(6),
+                      _buildButton(4, buttonSize),
+                      _buildButton(5, buttonSize),
+                      _buildButton(6, buttonSize),
                     ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildButton(7),
-                      _buildButton(8),
-                      _buildButton(9),
+                      _buildButton(7, buttonSize),
+                      _buildButton(8, buttonSize),
+                      _buildButton(9, buttonSize),
                     ],
                   ),
                   SizedBox(
-                    width: 250,
-                    height: 90,
+                    width: screenWidth * 0.65,
+                    height: buttonSize * 1.7,
                     child: Stack(
                       alignment: Alignment.topCenter,
                       children: [
+                        Positioned(child: _buildButton(0, buttonSize)),
                         Positioned(
-                          // top: 20,
-                          child: _buildButton(0),
+                          left: 0,
+                          top: buttonSize * 0.4,
+                          child: fourDotsButton(smallButtonSize, dotSize),
                         ),
-                        Positioned(left: 0, top: 20, child: fourDotsButton()),
-                        Positioned(right: 0, top: 20, child: abcButton()),
+                        Positioned(
+                          right: 0,
+                          top: buttonSize * 0.4,
+                          child: abcButton(smallButtonSize),
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              SizedBox(height: screenHeight * 0.015),
+
+              /// Volume - DPad - Channel
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.07),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     VolumeControlPill(
-                      onClick: (code) async {
-                        await sendSTBKey(code);
-                      },
+                      onClick: (code) async => await sendSTBKey(code),
                     ),
-                    PieDPad(
-                      onClick: (code) async {
-                        await sendSTBKey(code);
-                      },
-                    ),
+                    PieDPad(onClick: (code) async => await sendSTBKey(code)),
                     ChannelControlPill(
-                      onClick: (code) async {
-                        await sendSTBKey(code);
-                      },
+                      onClick: (code) async => await sendSTBKey(code),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: screenHeight * 0.03),
+
+              /// Bottom section
               Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Home, Back, Info, Mute
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      _iconCircleButton(Icons.volume_off, 176),
-                      _iconCircleButton(Icons.arrow_back, 143),
-                      _homeButton(Icons.home, 141),
-                      _iconCircleButton(Icons.info_outline, 157),
-                      _iconCircleButton(Icons.menu_rounded, 138),
+                      _iconCircleButton(Icons.volume_off, 176, smallButtonSize),
+                      _iconCircleButton(Icons.arrow_back, 143, smallButtonSize),
+                      _homeButton(Icons.home, 141, bigButtonSize),
+                      _iconCircleButton(
+                        Icons.info_outline,
+                        157,
+                        smallButtonSize,
+                      ),
+                      _iconCircleButton(
+                        Icons.menu_rounded,
+                        138,
+                        smallButtonSize,
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: screenHeight * 0.02),
+
                   // Rewind, Play/Pause, Fast Forward
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _iconCircleButton(Icons.fast_rewind, 150),
-                      _iconCircleButton(CupertinoIcons.playpause_fill, 139),
-                      _iconCircleButton(Icons.fast_forward, 144),
+                      _iconCircleButton(
+                        Icons.fast_rewind,
+                        150,
+                        smallButtonSize,
+                      ),
+                      _iconCircleButton(
+                        CupertinoIcons.playpause_fill,
+                        139,
+                        smallButtonSize,
+                      ),
+                      _iconCircleButton(
+                        Icons.fast_forward,
+                        144,
+                        smallButtonSize,
+                      ),
                     ],
                   ),
                 ],

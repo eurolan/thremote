@@ -8,18 +8,23 @@ class PieDPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double size = 230;
+    final screenWidth = MediaQuery.of(context).size.width;
+    // final screenHeight = MediaQuery.of(context).size.height;
+
+    final dpadSize = screenWidth * 0.55;
+    final okButtonSize = dpadSize * 0.35;
+    final iconSize = dpadSize * 0.09;
 
     return SizedBox(
-      width: size,
-      height: size,
+      width: dpadSize,
+      height: dpadSize,
       child: Stack(
         alignment: Alignment.center,
         children: [
           // Background Circle
           Container(
-            width: size,
-            height: size,
+            width: dpadSize,
+            height: dpadSize,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
@@ -29,18 +34,18 @@ class PieDPad extends StatelessWidget {
           // Diagonal dividers
           ClipOval(
             child: CustomPaint(
-              size: Size(size, size),
+              size: Size(dpadSize, dpadSize),
               painter: DiagonalDividerPainter(),
             ),
           ),
 
-          // Pie Slices (Triangle Taps)
-          _buildTriangle(Direction.right, 171, size),
-          _buildTriangle(Direction.left, 191, size),
-          _buildTriangle(Direction.down, 190, size),
-          _buildTriangle(Direction.up, 189, size),
+          // Pie slices
+          _buildTriangle(Direction.right, 171, dpadSize, iconSize),
+          _buildTriangle(Direction.left, 191, dpadSize, iconSize),
+          _buildTriangle(Direction.down, 190, dpadSize, iconSize),
+          _buildTriangle(Direction.up, 189, dpadSize, iconSize),
 
-          // Center OK Button
+          // Center OK button
           ElevatedButton(
             onPressed: () async => await onClick(172),
             style: ElevatedButton.styleFrom(
@@ -50,13 +55,16 @@ class PieDPad extends StatelessWidget {
                 color: Color.fromRGBO(192, 24, 81, 1),
                 width: 3,
               ),
-              elevation: 0, 
-              padding: EdgeInsets.zero, 
-              fixedSize: const Size(80, 80), 
+              elevation: 0,
+              padding: EdgeInsets.zero,
+              fixedSize: Size(okButtonSize, okButtonSize),
             ),
-            child: const Text(
+            child: Text(
               "OK",
-              style: TextStyle(fontSize: 20, color: Colors.black54),
+              style: TextStyle(
+                fontSize: okButtonSize * 0.25,
+                color: Colors.black54,
+              ),
             ),
           ),
         ],
@@ -64,7 +72,12 @@ class PieDPad extends StatelessWidget {
     );
   }
 
-  Widget _buildTriangle(Direction direction, int code, double size) {
+  Widget _buildTriangle(
+    Direction direction,
+    int code,
+    double size,
+    double iconSize,
+  ) {
     return ClipPath(
       clipper: PieSegmentClipper(direction),
       child: SizedBox(
@@ -76,39 +89,45 @@ class PieDPad extends StatelessWidget {
             shadowColor: Colors.transparent,
             padding: EdgeInsets.zero,
             alignment: _alignment(direction),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
           ),
           onPressed: () async => await onClick(code),
-          child: Icon(_iconData(direction), color: Colors.black, size: 20),
+          child: Icon(
+            _iconData(direction),
+            color: Colors.black,
+            size: iconSize,
+          ),
         ),
       ),
     );
   }
+}
 
-  Alignment _alignment(Direction direction) {
-    switch (direction) {
-      case Direction.up:
-        return const Alignment(0, -0.8);
-      case Direction.down:
-        return const Alignment(0, 0.8);
-      case Direction.left:
-        return const Alignment(-0.8, 0);
-      case Direction.right:
-        return const Alignment(0.8, 0);
-    }
+Alignment _alignment(Direction direction) {
+  switch (direction) {
+    case Direction.up:
+      return const Alignment(0, -0.8);
+    case Direction.down:
+      return const Alignment(0, 0.8);
+    case Direction.left:
+      return const Alignment(-0.8, 0);
+    case Direction.right:
+      return const Alignment(0.8, 0);
   }
+}
 
-  IconData _iconData(Direction direction) {
-    switch (direction) {
-      case Direction.up:
-        return Icons.arrow_drop_up;
-      case Direction.down:
-        return Icons.arrow_drop_down;
-      case Direction.left:
-        return Icons.arrow_left;
-      case Direction.right:
-        return Icons.arrow_right;
-    }
+IconData _iconData(Direction direction) {
+  switch (direction) {
+    case Direction.up:
+      return Icons.arrow_drop_up;
+    case Direction.down:
+      return Icons.arrow_drop_down;
+    case Direction.left:
+      return Icons.arrow_left;
+    case Direction.right:
+      return Icons.arrow_right;
   }
 }
 
