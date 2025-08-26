@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,23 +52,48 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   }
 
   Widget _buildButton(int number, double size) {
+    Timer? repeatTimer;
+
+    void startSending() {
+      repeatTimer = Timer.periodic(
+        const Duration(milliseconds: 300),
+        (_) => sendSTBKey(128 + number),
+      );
+    }
+
+    void stopSending() {
+      repeatTimer?.cancel();
+      repeatTimer = null;
+    }
+
     return Container(
       margin: EdgeInsets.all(size * 0.15),
       width: size,
       height: size,
-      child: ElevatedButton(
-        onPressed: () async {
-          await sendSTBKey(128 + number);
-        },
-        style: ElevatedButton.styleFrom(
-          shape: const CircleBorder(),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          padding: EdgeInsets.zero,
-        ),
-        child: Text(
-          number.toString(),
-          style: TextStyle(fontSize: size * 0.4, color: Colors.black54),
+      child: Material(
+        color: Colors.white,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          splashColor: Colors.grey.withOpacity(0.3),
+          onTap: () {
+            sendSTBKey(128 + number);
+          },
+          onTapDown: (_) {
+            startSending();
+          },
+          onTapUp: (_) {
+            stopSending();
+          },
+          onTapCancel: () {
+            stopSending();
+          },
+          child: Center(
+            child: Text(
+              number.toString(),
+              style: TextStyle(fontSize: size * 0.4, color: Colors.black54),
+            ),
+          ),
         ),
       ),
     );
