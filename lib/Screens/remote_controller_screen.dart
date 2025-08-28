@@ -41,6 +41,7 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
   }
 
   final FocusNode _focusNode = FocusNode();
+  final FocusNode _keyboardListenerFocus = FocusNode();
   final TextEditingController _controller = TextEditingController();
   bool _isKeyboardVisible = false;
 
@@ -328,14 +329,24 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                 opacity: 0.0,
                 child: SizedBox(
                   height: 2,
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    autofocus: false,
-                    onChanged: (value) async {
-                      await _sendCharacter(value);
-                      _controller.clear();
+                  child: RawKeyboardListener(
+                    focusNode: _keyboardListenerFocus,
+                    onKey: (RawKeyEvent event) async {
+                      if (event is RawKeyDownEvent) {
+                        if (event.logicalKey == LogicalKeyboardKey.backspace) {
+                          await sendSTBKey(143);
+                        }
+                      }
                     },
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      autofocus: false,
+                      onChanged: (value) async {
+                        await _sendCharacter(value);
+                        _controller.clear();
+                      },
+                    ),
                   ),
                 ),
               ),
