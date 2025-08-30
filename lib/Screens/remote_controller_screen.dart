@@ -329,10 +329,10 @@ class _RemoteControlScreenState extends State<RemoteControlScreen> {
                 opacity: 0.0,
                 child: SizedBox(
                   height: 2,
-                  child: RawKeyboardListener(
+                  child: KeyboardListener(
                     focusNode: _keyboardListenerFocus,
-                    onKey: (RawKeyEvent event) async {
-                      if (event is RawKeyDownEvent) {
+                    onKeyEvent: (KeyEvent event) async {
+                      if (event is KeyDownEvent) {
                         if (event.logicalKey == LogicalKeyboardKey.backspace) {
                           await sendSTBKey(143);
                         }
