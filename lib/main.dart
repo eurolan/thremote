@@ -16,6 +16,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Remote', home: SplashScreen());
+    return MaterialApp(
+      title: 'Remote',
+      home: SplashScreen(),
+      debugShowCheckedModeBanner: false,
+    );
   }
 }
