@@ -9,13 +9,13 @@ import 'package:multicast_dns/multicast_dns.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:pointycastle/export.dart';
 import 'package:remote/models/device_model.dart';
+import 'package:remote/pref/shared_pref.dart';
 import 'package:remote/utils/display_name.dart';
 
 class STBRemoteService {
   int port = 40611;
-  String devId = "faeac9ec41c2f652";
+  String devId = globalDevId;
   String devDescr = "Magic Remote";
-
   Socket? _socket;
   StreamQueue<List<int>>? _streamQueue;
 
