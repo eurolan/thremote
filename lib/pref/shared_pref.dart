@@ -1,14 +1,28 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:uuid/uuid.dart';
 import 'package:remote/models/device_model.dart';
 import 'package:remote/utils/stb_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+String globalDevId = "unknown";
 
 class SharedPrefrencesHelper {
   static SharedPreferences? preferences;
 
   static Future<void> init() async {
     preferences = await SharedPreferences.getInstance();
+
+    // Try to read existing devId
+    String? savedId = preferences?.getString("devId");
+
+    if (savedId == null) {
+      // First time install → generate and save
+      savedId = const Uuid().v4().replaceAll("-", "").substring(0, 16);
+      await preferences?.setString("devId", savedId);
+    }
+
+    globalDevId = savedId;
   }
 
   Future<List<DeviceModel>> loadConnectedDevices() async {
